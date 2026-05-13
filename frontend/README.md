@@ -1,17 +1,17 @@
-# piilot-pack-hello-ui
+# piilot-pack-sap-ui
 
-Frontend contributions for the `hello` Piilot plugin. Ships alongside
-the backend package `piilot-pack-hello` on PyPI — the two share a
-namespace and a per-company activation flag.
+Frontend contributions for the `sap` Piilot plugin. Ships alongside
+the backend package `piilot-pack-sap` on PyPI — the two share a
+namespace (`sap`) and a per-company activation flag.
 
 ## What's in here
 
 - `src/index.ts` — plugin entry point. Exports `register(core)` called
   by the host at boot.
-- `src/HelloModuleView.tsx` — React component rendered when the user
-  opens `/modules/:slug` matching `hello.hello`.
+- `src/SAPConnectorView.tsx` — React component rendered when the user
+  opens `/modules/:slug` matching `sap.connector`.
 - `src/locales/{fr,en}.json` — translation keys merged under the
-  `hello` namespace by the host's i18next.
+  `sap` namespace by the host's i18next.
 - `__tests__/` — Vitest isolated tests.
 
 ## Pattern

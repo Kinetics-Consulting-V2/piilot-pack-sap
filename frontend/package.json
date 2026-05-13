@@ -1,13 +1,13 @@
 {
-  "name": "piilot-pack-hello-ui",
-  "version": "0.3.0",
+  "name": "piilot-pack-sap-ui",
+  "version": "0.1.0",
   "description": "Hello world plugin — frontend contributions (sample module view, locales) for Piilot core. Scaffold starter for SDK v0.3.",
   "license": "Apache-2.0",
-  "author": "TODO author name <TODO@example.com>",
-  "homepage": "https://github.com/Kinetics-Consulting-V2/piilot-pack-hello",
+  "author": "Kinetics Consulting V2 <contact@piilot.ai>",
+  "homepage": "https://github.com/Kinetics-Consulting-V2/piilot-pack-sap",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kinetics-Consulting-V2/piilot-pack-hello.git"
+    "url": "git+https://github.com/Kinetics-Consulting-V2/piilot-pack-sap.git"
   },
   "keywords": ["piilot", "plugin", "frontend"],
   "type": "module",

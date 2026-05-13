@@ -1,6 +1,6 @@
 name: Release
 
-# Builds and publishes piilot-pack-hello to PyPI (or TestPyPI for
+# Builds and publishes piilot-pack-sap to PyPI (or TestPyPI for
 # release candidates) whenever a tag matching `v*` is pushed.
 #
 # Tag convention:
@@ -13,7 +13,7 @@ name: Release
 #
 # Authentication: OIDC Trusted Publisher (no token stored). PyPI +
 # TestPyPI projects must be configured to trust this workflow file
-# under Kinetics-Consulting-V2/piilot-pack-hello. See:
+# under Kinetics-Consulting-V2/piilot-pack-sap. See:
 #   https://docs.pypi.org/trusted-publishers/
 #
 # The wheel version comes from pyproject.toml's [project] version
@@ -92,19 +92,19 @@ jobs:
         # where ``[tool.setuptools.package-data]`` picks it up. Removed
         # after build (``if: always()``) to keep the source tree clean
         # even on failed builds.
-        run: cp pyproject.toml piilot_pack_hello/pyproject.toml
+        run: cp pyproject.toml piilot_pack_sap/pyproject.toml
 
       - name: Build wheel + sdist
         run: python -m build
 
       - name: Clean up copied pyproject
         if: always()
-        run: rm -f piilot_pack_hello/pyproject.toml
+        run: rm -f piilot_pack_sap/pyproject.toml
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
-          name: piilot-pack-hello-dist
+          name: piilot-pack-sap-dist
           path: dist/
           retention-days: 30
 
@@ -115,14 +115,14 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://test.pypi.org/project/piilot-pack-hello/
+      url: https://test.pypi.org/project/piilot-pack-sap/
     permissions:
       id-token: write
     steps:
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
-          name: piilot-pack-hello-dist
+          name: piilot-pack-sap-dist
           path: dist/
 
       - name: Publish to TestPyPI
@@ -138,14 +138,14 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/piilot-pack-hello/
+      url: https://pypi.org/project/piilot-pack-sap/
     permissions:
       id-token: write
     steps:
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
-          name: piilot-pack-hello-dist
+          name: piilot-pack-sap-dist
           path: dist/
 
       - name: Publish to PyPI

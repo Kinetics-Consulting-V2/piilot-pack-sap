@@ -1,4 +1,4 @@
-# CODEOWNERS for piilot-pack-hello
+# CODEOWNERS for piilot-pack-sap
 # Edit this file after scaffolding to reflect the plugin's actual owners.
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-configuration/customizing-your-repository/about-code-owners
 
@@ -6,7 +6,7 @@
 *                       @Sylvain
 
 # Plugin source and tests
-/piilot_pack_hello/  @Sylvain
+/piilot_pack_sap/  @Sylvain
 /tests/                              @Sylvain
 
 # CI & release infra

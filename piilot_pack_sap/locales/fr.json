@@ -1,0 +1,33 @@
+{
+  "sap": {
+    "modules": {
+      "connector": {
+        "title": "SAP S/4HANA Cloud",
+        "description": "Connectez-vous à votre instance SAP S/4HANA Cloud via OData v4. Accès agent en lecture seule sur les entités FI / CO / MM / SD."
+      }
+    },
+    "connectors": {
+      "s4hana_cloud": {
+        "label": "SAP S/4HANA Cloud (OData v4)",
+        "auth_mode": { "label": "Mode d'authentification" },
+        "base_url": { "label": "URL de l'instance (ex : https://my123456.s4hana.cloud.sap)" },
+        "basic_username": { "label": "Nom d'utilisateur (Basic)" },
+        "basic_password": { "label": "Mot de passe (Basic)" },
+        "oauth_token_url": { "label": "URL du token OAuth 2.0" },
+        "oauth_client_id": { "label": "Client ID OAuth" },
+        "oauth_client_secret": { "label": "Client Secret OAuth" },
+        "oauth_scope": { "label": "Scope OAuth (optionnel)" }
+      }
+    },
+    "view": {
+      "phase_banner": "Plugin SAP — v0.1.0 (scaffolding Phase 0)",
+      "phase_description": "Ce module accueillera la configuration de la connexion SAP, le statut, l'explorateur d'entités OData et le journal d'audit. Phases 1 à 5 à venir.",
+      "tabs": {
+        "connection": "Connexion",
+        "status": "Statut",
+        "browser": "Explorateur",
+        "audit": "Audit"
+      }
+    }
+  }
+}

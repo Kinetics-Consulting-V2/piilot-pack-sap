@@ -1,6 +1,6 @@
 name: Release UI
 
-# Publishes piilot-pack-hello-ui to npm whenever a tag matching
+# Publishes piilot-pack-sap-ui to npm whenever a tag matching
 # ``ui-v*`` is pushed. Separate tag namespace from any PyPI backend
 # release workflow (``v*``) so the two packages can ship independently.
 #
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: npm
-      url: https://www.npmjs.com/package/piilot-pack-hello-ui
+      url: https://www.npmjs.com/package/piilot-pack-sap-ui
     steps:
       - uses: actions/checkout@v4
 

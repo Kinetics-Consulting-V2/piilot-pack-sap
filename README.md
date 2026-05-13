@@ -1,100 +1,148 @@
-# piilot-pack-hello
+# piilot-pack-sap
 
-> Hello world plugin — Piilot SDK scaffold starter.
+> SAP S/4HANA Cloud OData connector for Piilot — read-only agent access to FI / CO / MM / SD entities for financial and operational analytics.
 
-<!-- scaffold-banner:start -->
-> 🧩 **This repo is both a template and a working "hello" plugin.**
->
-> **Just want to demo / dogfood?** Install it as-is, it loads as plugin
-> `hello` with one module and one migration — no edits required.
->
-> **Want to start your own plugin?** Fork via `gh repo create --template`,
-> then rename everything to your namespace in one go:
->
-> ```bash
-> ./init-plugin.sh <namespace> "<description>" <category>
-> ```
->
-> See the [Piilot plugin development guide][guide] for the full workflow.
->
-> [guide]: https://github.com/Kinetics-Consulting-V2/AICockpit/blob/main/docs/PLUGIN_DEVELOPMENT.md
-<!-- scaffold-banner:end -->
+[![PyPI](https://img.shields.io/pypi/v/piilot-pack-sap)](https://pypi.org/project/piilot-pack-sap/)
+[![npm](https://img.shields.io/npm/v/piilot-pack-sap-ui)](https://www.npmjs.com/package/piilot-pack-sap-ui)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ---
 
 ## What it does
 
-TODO: one-paragraph summary of this plugin's purpose and the problem
-it solves for a Piilot company.
+Connect your **Piilot agents** to a **SAP S/4HANA Cloud** instance via the
+standard **OData v4** API. Read-only access to financial entities
+(`A_JournalEntry`, `A_GLAccountLineItem`, `A_BusinessPartner`, …),
+controlling entities (`A_CostCenter`, `A_ProfitCenter`, …) and
+operational entities across MM / SD modules.
 
-## What this template demonstrates (SDK v0.3)
+The plugin contributes :
 
-The `hello` plugin is a functional showcase of the Piilot SDK v0.2+
-primitives, pinned to `piilot-sdk>=0.3.0`. Fork the template and
-start from a plugin that already wires:
+* **1 module Piilot** `sap.connector` — connection config (auth +
+  endpoint), status panel, OData entity browser, audit log.
+* **1 connector** `sap.s4hana_cloud` — Basic auth or OAuth 2.0
+  `client_credentials` against your SAP S/4HANA Cloud instance.
+  Credentials encrypted at the DB boundary by the Piilot core
+  (Fernet).
+* **9 agent tools** (Phase 2 deliverable) — `sap_search_entity`,
+  `sap_describe_entity`, `sap_select`, `sap_count`, `sap_aggregate`,
+  `sap_top_n`, `sap_navigate`, `sap_lookup`, `sap_invoke_function`.
+  All read-only. Strict whitelist OData validator (no `$expand`, no
+  `$batch`, no function imports en écriture, no mutations).
+* **1 KB plugin-owned** "SAP metadata" (Phase 1 deliverable) — embedded
+  introspection of your SAP `$metadata` for RAG-driven entity discovery.
 
-| File | SDK primitive | What it illustrates |
+**Pattern** : 1 plugin, 1 module Piilot. Aligned with
+`piilot-pack-pennylane` (treasury dashboard) and `piilot-pack-supabase`
+(connector + tools). See `AICockpit/docs/sdk/PLUGIN_DEVELOPMENT.md`
+§20 for the SDK frontend contract.
+
+---
+
+## Scope v1
+
+| Variant | OData v4 | v1 support |
 |---|---|---|
-| `piilot_pack_hello/handlers.py` | `ctx.handlers.register` | Module handlers dispatched by the module runtime |
-| `piilot_pack_hello/migrations/` + `__init__.py` | `ctx.migrations.register_schema` | Idempotent per-plugin SQL schema + RLS policies |
-| `piilot_pack_hello/locales/` + `__init__.py` | `ctx.i18n.register_locales` | Per-namespace locale catalogs merged into `/i18n/catalog` |
-| `piilot_pack_hello/repo.py` + `migrations/002_*.sql` | `piilot.sdk.db` | `cursor()`, `run_in_thread`, `Json` — direct SQL with RLS propagation |
-| `piilot_pack_hello/routes.py` | `piilot.sdk.http` | `register_router` + `Depends(require_user)` + `get_real_ip` |
-| `piilot_pack_hello/tools.py` | `piilot.sdk.tools` + `piilot.sdk.session` | Agent `StructuredTool` with `system_prompt_builder` + session read |
-| `piilot_pack_hello/seeds.py` | `piilot.sdk.modules` + `piilot.sdk.templates` | Idempotent `register_module` + `register_template` upserts |
-| `piilot_pack_hello/connector.py` | `piilot.sdk.connectors` | **Commented out** — pattern for declaring an external API connector |
-| `piilot_pack_hello/jobs.py` | `piilot.sdk.scheduler` | **Commented out** — pattern for a periodic sync handler |
-| `frontend/src/index.ts` | `core.registerModuleView` + `registerI18nBundle` | Plugin UI entry — ships as `piilot-pack-hello-ui` on npm |
-| `frontend/src/HelloModuleView.tsx` | React component rendered by the host `ModuleViewShell` | URL-backed sub-routing via `useSearchParams`, imports from `@plugin-host/*` |
-| `.github/workflows/release-ui.yml` | npm publish on `ui-v*` tag | Mirrors the PyPI workflow for the backend |
+| **SAP S/4HANA Cloud** | ✅ Full standard | ✅ **Cible v1** |
+| **SAP S/4HANA on-premise** | ✅ via Cloud Connector / API Mgmt | 🟡 v2+ |
+| **SAP ECC (R/3 legacy)** | 🟡 OData v2 partiel + BAPIs RFC | ❌ v2+ (probably another plugin) |
 
-Full reference: see the [Piilot plugin development guide][guide].
+Auth modes shipped in v1 :
 
-### Dual distribution
+* `basic` — username + password, sandbox-friendly + smaller installs.
+* `oauth_client_credentials` — standard SAP S/4HANA Cloud productive
+  Communication User. Token URL + Client ID/Secret + scope.
 
-- **Backend** — `piilot-pack-hello` on PyPI, tagged `v<version>`.
-- **Frontend** — `piilot-pack-hello-ui` on npm, tagged `ui-v<version>`.
+X.509 cert auth is deferred to v1.1.
 
-Both ship from this single repo; the two release workflows publish
-independently so a backend hot-fix doesn't force a frontend release
-and vice-versa.
+---
+
+## Status
+
+🟡 **v0.1.0 — Phase 0 scaffolding** (unreleased)
+
+This release ships the plugin skeleton :
+
+* Manifest declared (namespace, module, connector, permissions).
+* Migration `001_init_sap.sql` (3 tables : connections, schema_snapshot,
+  audit_log) with RLS.
+* `Plugin.register()` wires migrations, i18n, module handler,
+  connector spec, routes (no-op tools, no-op seeds for KB / agent
+  templates).
+* Frontend `SAPConnectorView` with phase banner.
+
+**No OData traffic yet.** Phases 1 → 5 add the real functionality —
+introspect `$metadata`, parser/validator, 9 agent tools, 4-tab UX,
+hardening, beta dogfood.
+
+See `AICockpit/docs/docs_dev/suivi.md` (internal) for the phase-by-phase
+checklist.
+
+---
 
 ## Install
 
-### Self-hosted Piilot (docker-compose.selfhost.yml)
+### Self-hosted Piilot
 
 ```bash
-# Drop the package into /app/plugins/
-pip install piilot-pack-hello
-# or for a git-based install while the SDK is still pre-PyPI:
-pip install git+https://github.com/Kinetics-Consulting-V2/piilot-pack-hello.git@v0.1.0
-
-# Restart the backend
+pip install piilot-pack-sap
 docker compose restart backend
 ```
 
 ### Piilot Cloud (SaaS)
 
-Add the dependency to the core's `requirements.txt`:
+Pinned in core's `backend/api/requirements.txt`:
 
 ```
-piilot-pack-hello @ git+https://github.com/Kinetics-Consulting-V2/piilot-pack-hello.git@v0.1.0
+piilot-pack-sap==0.1.0
 ```
 
-Coolify rebuilds the backend image; the loader picks up the plugin at
-startup and applies migrations. Enable for a given company via:
+Frontend pinned in core's `frontend/package.json`:
+
+```json
+"piilot-pack-sap-ui": "^0.1.0"
+```
+
+Then the core's `vite.config.ts` resolves `@plugin/sap` via its 3-tier
+alias (dev bind-mount → npm tier → noop shim). See
+`AICockpit/docs/sdk/PLUGIN_DEV_WORKFLOW.md` §5.
+
+Enable for a given company via the activation API :
 
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "X-Company-Id: $COMPANY_ID" \
-  https://api.piilot.ai/admin/plugins/hello/activations/$COMPANY_ID
+  https://api.piilot.ai/admin/plugins/sap/activations/$COMPANY_ID
 ```
 
-## Usage
+---
 
-TODO: how a user interacts with the plugin (module screens, agent
-tools, integrations…).
+## Configuration
+
+A Piilot admin connects an SAP S/4HANA Cloud instance from the
+plugin's module view (`/modules/<sap-connector-uuid>` once the plugin
+is activated).
+
+Required fields :
+
+| Field | Description |
+|---|---|
+| **Auth mode** | `basic` or `oauth_client_credentials` |
+| **Base URL** | Your S/4HANA Cloud tenant URL (e.g. `https://my123456.s4hana.cloud.sap`) |
+| **Basic — username / password** | If `auth_mode = basic`. Communication User created in SAP. |
+| **OAuth — token URL / client ID / client secret / scope** | If `auth_mode = oauth_client_credentials`. Configure a productive Communication Arrangement in SAP. |
+
+Credentials are encrypted at rest (Fernet) by the core's
+`plugin_connections` table. The plugin never stores raw secrets in
+its own `integrations_sap.connections` row.
+
+**Required SAP role** : the Communication User (Basic) or the
+Communication Arrangement (OAuth) MUST have a **PFCG role restricted
+to read-only access** on the EntitySets you want Piilot to consume.
+See `docs/SAP_ROLE_SETUP.md` (Phase 4 deliverable) for the SAP
+transaction snippets.
+
+---
 
 ## Development
 
@@ -102,44 +150,62 @@ tools, integrations…).
 
 ```bash
 # Clone next to the Piilot core
-cd /opt/factory/projects
-git clone https://github.com/Kinetics-Consulting-V2/piilot-pack-hello.git
+cd /opt/factory/projects/AICockpit/workspaces/<workspace>/plugins-dev
+git clone https://github.com/Kinetics-Consulting-V2/piilot-pack-sap.git
+cd piilot-pack-sap
 
 # Install in editable mode with dev extras
-cd piilot-pack-hello
 pip install -e .[dev]
+
+# Frontend (peer deps only, no install needed for source-only npm)
+cd frontend && npm install --no-package-lock  # for vitest local
 ```
 
-Then add the plugin as a bind mount in the core's
-`docker-compose.override.yml` (gitignored):
+Bind-mount the plugin into the core's `compose.dev.yml` (gitignored
+by AICockpit) :
 
 ```yaml
 services:
   backend:
     volumes:
-      - ../piilot-pack-hello:/app/plugins/piilot-pack-hello
+      - ../plugins-dev/piilot-pack-sap:/app/plugins/piilot-pack-sap
 ```
 
-Restart the backend and watch for:
+Restart the backend and watch for :
 
 ```
-[plugins] Loaded: hello v0.1.0 (handlers=1, tools=0)
+[plugins] Loaded: sap v0.1.0 (handlers=1, tools=0, modules=1, connectors=1)
 ```
 
 ### Run the tests
 
 ```bash
+# Backend
 pytest
+
+# Frontend
+cd frontend && npm test
 ```
+
+---
 
 ## Versioning
 
 This plugin follows [Semantic Versioning](https://semver.org/). The
 `sdk_compat` range in `pyproject.toml` pins the Piilot SDK versions
-we build against. Watch the core's
-[`docs/SDK_CHANGELOG.md`][changelog] for breaking changes.
+we build against. v0.1.0 pins `piilot-sdk>=0.7.0,<1.0.0`. Watch the
+core's [SDK changelog][changelog] for breaking changes.
 
-[changelog]: https://github.com/Kinetics-Consulting-V2/AICockpit/blob/main/docs/SDK_CHANGELOG.md
+[changelog]: https://github.com/Kinetics-Consulting-V2/AICockpit/blob/main/docs/sdk/SDK_CHANGELOG.md
+
+## Dual distribution
+
+* **Backend** — `piilot-pack-sap` on PyPI, tagged `v<version>`.
+* **Frontend** — `piilot-pack-sap-ui` on npm, tagged `ui-v<version>`.
+
+Both ship from this single repo; the two release workflows publish
+independently via OIDC Trusted Publisher (PyPI) and Classic Automation
+token (npm).
 
 ## License
 

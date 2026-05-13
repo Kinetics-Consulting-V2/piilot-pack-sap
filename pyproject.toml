@@ -1,19 +1,21 @@
 [project]
-name = "piilot-pack-hello"
-version = "0.4.0"
-description = "Hello world plugin — Piilot SDK v0.6 scaffold starter."
+name = "piilot-pack-sap"
+version = "0.1.0"
+description = "SAP S/4HANA Cloud OData connector — read-only agent access to FI/CO/MM/SD entities for financial and operational analytics"
 license = "apache-2.0"
 authors = [
-    { name = "TODO author name", email = "TODO@example.com" },
+    { name = "Kinetics Consulting V2", email = "contact@piilot.ai" },
 ]
 readme = "README.md"
 requires-python = ">=3.12"
-urls.homepage = "https://github.com/Kinetics-Consulting-V2/piilot-pack-hello"
+urls.homepage = "https://github.com/Kinetics-Consulting-V2/piilot-pack-sap"
 
 dependencies = [
-    "piilot-sdk>=0.6.0,<1.0.0",
+    "piilot-sdk>=0.7.0,<1.0.0",
     "fastapi>=0.115",
     "langchain-core>=0.3",
+    "httpx>=0.27.0,<1.0.0",
+    "defusedxml>=0.7.1",
 ]
 
 [project.optional-dependencies]
@@ -26,59 +28,114 @@ dev = [
 ]
 
 [project.entry-points."piilot.plugins"]
-hello = "piilot_pack_hello:Plugin"
+sap = "piilot_pack_sap:Plugin"
 
 # -----------------------------------------------------------------------------
 # Piilot plugin manifest
 # -----------------------------------------------------------------------------
-# See docs/sdk/PLUGIN_DEVELOPMENT.md (upstream piilot-sdk) for the full field
-# reference. Fields marked TODO must be edited before the first release.
-# -----------------------------------------------------------------------------
-
 [tool.piilot.plugin]
 manifest_version = 1
-namespace = "hello"
-sdk_compat = ">=0.6.0,<1.0.0"
-category = "other"
+namespace = "sap"
+sdk_compat = ">=0.7.0,<1.0.0"
+category = "integration"
 supported_modes = ["saas", "selfhosted"]
 supported_locales = ["fr", "en"]
 default_access = "restricted"
-# icon = "./assets/icon.svg"  # TODO uncomment when you ship an icon
 
-# --- Modules (dashboards / workflow surfaces) ---
+# --- Modules ---
+# Single module Piilot — pattern aligned with piilot-pack-pennylane and
+# piilot-pack-supabase. Carries the whole plugin UX (connection config,
+# status, entity browser, audit log).
 [[tool.piilot.plugin.provides.modules]]
-id = "hello.dashboard"
-label_key = "hello.modules.dashboard.title"
-icon = "hand"
+id = "sap.connector"
+label_key = "sap.modules.connector.title"
+icon = "plug"
 
-# --- Agent tools (optional) ---
-# Register with piilot.sdk.tools.register_tool(spec). The manifest entry
-# here is informational — the runtime registry is populated by the call.
-[[tool.piilot.plugin.provides.agent_tools]]
-id = "hello.greet"
-label_key = "hello.tools.greet.label"
-description_key = "hello.tools.greet.description"
+# --- Connectors ---
+# SAP S/4HANA Cloud OData endpoint with Basic auth or OAuth 2.0
+# client_credentials (decision tour-1 dans suivi.md). X.509 reporté à v1.1.
+[[tool.piilot.plugin.provides.connectors]]
+id = "sap.s4hana_cloud"
+label_key = "sap.connectors.s4hana_cloud.label"
+auth_type = "custom"
+# Credentials schema covers both auth modes — the connector_service
+# picks the right code path based on which fields are populated.
 
-# --- Connectors (optional, commented — enable when you have a real API) ---
-# [[tool.piilot.plugin.provides.connectors]]
-# id = "hello.api"
-# label_key = "hello.connectors.api.label"
-# auth_type = "api_key"
-#
-# [[tool.piilot.plugin.provides.connectors.credentials_schema]]
-# name = "api_key"
-# type = "secret"
-# required = true
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "auth_mode"
+type = "string"
+required = true
+default = "basic"
+# Values accepted at runtime: "basic" | "oauth_client_credentials"
+label_key = "sap.connectors.s4hana_cloud.auth_mode.label"
 
-# --- Scheduled jobs (optional, commented) ---
-# [[tool.piilot.plugin.provides.scheduled_jobs]]
-# id = "hello.nightly_sync"
-# schedule = "daily"
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "base_url"
+type = "string"
+required = true
+# E.g. https://my123456.s4hana.cloud.sap (no trailing slash)
+label_key = "sap.connectors.s4hana_cloud.base_url.label"
 
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "basic_username"
+type = "string"
+required = false
+label_key = "sap.connectors.s4hana_cloud.basic_username.label"
+
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "basic_password"
+type = "secret"
+required = false
+label_key = "sap.connectors.s4hana_cloud.basic_password.label"
+
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "oauth_token_url"
+type = "string"
+required = false
+label_key = "sap.connectors.s4hana_cloud.oauth_token_url.label"
+
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "oauth_client_id"
+type = "string"
+required = false
+label_key = "sap.connectors.s4hana_cloud.oauth_client_id.label"
+
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "oauth_client_secret"
+type = "secret"
+required = false
+label_key = "sap.connectors.s4hana_cloud.oauth_client_secret.label"
+
+[[tool.piilot.plugin.provides.connectors.credentials_schema]]
+name = "oauth_scope"
+type = "string"
+required = false
+label_key = "sap.connectors.s4hana_cloud.oauth_scope.label"
+
+# --- Agent tools ---
+# 9 OData tools — registered programmatically in tools.py (Phase 2).
+# Declared here for audit / discovery purposes only. The runtime
+# registry is populated by the register_tool() calls.
+# Phase 2 will populate this section.
+
+# --- Permissions (audit declaration) ---
 [tool.piilot.plugin.permissions]
-reads = ["public.companies"]
-writes = ["hello.*"]
-external_apis = []
+reads = [
+    "public.companies",
+    "integrations_sap.connections",
+    "integrations_sap.schema_snapshot",
+    "integrations_sap.audit_log",
+    "public.knowledge_bases",
+]
+writes = [
+    "integrations_sap.connections",
+    "integrations_sap.schema_snapshot",
+    "integrations_sap.audit_log",
+]
+external_apis = [
+    "*.s4hana.cloud.sap",
+    "sandbox.api.sap.com",
+]
 
 # -----------------------------------------------------------------------------
 # Build backend
@@ -89,24 +146,17 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["piilot_pack_hello*"]
+include = ["piilot_pack_sap*"]
 
-# Ship JSON locale catalogs + SQL migrations + the plugin manifest
-# alongside the Python code. The core loader reads
-# ``[tool.piilot.plugin]`` from the installed dist's pyproject.toml at
-# boot — wheels don't include the repo-root pyproject by default, so
-# we declare it as package data here AND copy it into the package dir
-# in the release workflow. Same pattern as piilot-pack-pennylane /
-# piilot-pack-compta.
 [tool.setuptools.package-data]
-"piilot_pack_hello" = [
+"piilot_pack_sap" = [
     "locales/*.json",
     "migrations/*.sql",
     "pyproject.toml",
 ]
 
 # -----------------------------------------------------------------------------
-# Lint / format
+# Lint / format / test
 # -----------------------------------------------------------------------------
 
 [tool.ruff]

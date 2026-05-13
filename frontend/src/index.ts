@@ -1,39 +1,39 @@
 /**
- * Hello plugin — frontend entry point.
+ * piilot-pack-sap — frontend entry point.
  *
  * Exports a single ``register`` function the core calls at boot via
- * the Vite alias ``@plugin/hello`` (host-side ``loader.ts``). Wires
- * the Hello module view + i18n bundles into the core registry.
+ * the Vite alias ``@plugin/sap`` (host-side ``loader.ts``). Wires the
+ * SAP connector module view + i18n bundles into the core registry.
  *
  * The plugin contributes exactly **two** things to the host UI :
  *   1. A React component rendered inside ``ModuleViewShell`` when the
- *      user opens ``/modules/:slug`` matching ``hello.hello``.
- *   2. FR/EN translation keys merged under the ``hello`` namespace.
+ *      user opens ``/modules/:slug`` matching ``sap.connector``.
+ *   2. FR/EN translation keys merged under the ``sap`` namespace.
  *
- * Nothing else. OAuth flows, modals, tables, whole sub-navigation —
- * all live *inside* ``HelloModuleView``. The host only provides the
- * shell.
+ * Nothing else. Connection config, status panel, entity browser,
+ * audit log — all live inside ``SAPConnectorView``. The host only
+ * provides the shell.
  */
 
 import type { PluginHostApi } from '@plugin-host/lib/pluginUI'
 
-import HelloModuleView from './HelloModuleView'
+import SAPConnectorView from './SAPConnectorView'
 import fr from './locales/fr.json'
 import en from './locales/en.json'
 
 // Single source of truth for this plugin's namespace. Used both for
 // ``registerI18nBundle(NS, ...)`` AND for unwrapping the locale JSON's
-// top-level ``{[NS]: {...}}`` envelope. ``init-plugin.sh`` rewrites the
-// literal ``'hello'`` to your namespace, so all references stay in
-// sync after init — DON'T inline the string in the calls below.
-const NS = 'hello'
+// top-level ``{[NS]: {...}}`` envelope. Backend namespace
+// (``[tool.piilot.plugin].namespace``) and frontend NS MUST match —
+// see PLUGIN_DEV_WORKFLOW §4.4.
+const NS = 'sap'
 
 export function register(core: PluginHostApi): void {
-    // Slug must match the ``module_slug`` seeded by your backend's
-    // ``register_module(...)`` call (see ``seeds.py``). Typos here
+    // Slug must match the ``module_slug`` seeded by the backend's
+    // ``register_module(...)`` call in ``seeds.py``. Typos here
     // silently disable the plugin UI rather than crashing — the shell
     // falls back to the generic step runner.
-    core.registerModuleView(`${NS}.hello`, HelloModuleView)
+    core.registerModuleView(`${NS}.connector`, SAPConnectorView)
 
     // Locale JSON files wrap their content under the namespace key to
     // match the TOML convention. Pass the inner payload to avoid

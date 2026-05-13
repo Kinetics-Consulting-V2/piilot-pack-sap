@@ -1,4 +1,4 @@
-"""Shared fixtures for ``piilot-pack-hello`` tests.
+"""Shared fixtures for ``piilot-pack-sap`` tests.
 
 The unit tests don't require a running Piilot backend. We build a
 minimal fake Context that exposes exactly what the plugin's handlers
@@ -48,7 +48,7 @@ def fake_ctx():
         db=None,
         company=SimpleNamespace(id="fake-company", name="Fake Co"),
         user=None,
-        logger=logging.getLogger("test.hello"),
+        logger=logging.getLogger("test.sap"),
         handlers=SimpleNamespace(register=lambda *a, **kw: None),
         tools=SimpleNamespace(register=lambda *a, **kw: None),
         migrations=SimpleNamespace(register_schema=lambda *a, **kw: None),
@@ -82,7 +82,7 @@ def plugin_context():
     manager inside a test::
 
         def test_something(plugin_context):
-            with plugin_context("hello"):
+            with plugin_context("sap"):
                 plugin.register(fake_ctx)
     """
     return _plugin_context

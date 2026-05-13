@@ -1,4 +1,4 @@
-# CLAUDE.md — piilot-pack-hello
+# CLAUDE.md — piilot-pack-sap
 
 > Context file for Claude Code when working inside this plugin repo.
 > The root-level CLAUDE.md of the Piilot **core** (`AICockpit`) covers
@@ -9,19 +9,19 @@
 
 ## What this repo is
 
-A **Piilot plugin** (`piilot-pack-hello`, namespace
-`hello`) — Hello world plugin / Piilot SDK scaffold starter. Dual
-purpose: installable as-is as a demo plugin, or forked via
-`gh repo create --template` + `./init-plugin.sh <ns> "..." <cat>` to
-produce a fresh plugin with your own namespace.
+A **Piilot plugin** (`piilot-pack-sap`, namespace `sap`) — SAP
+S/4HANA Cloud OData connector. Read-only agent access to FI / CO /
+MM / SD entities for financial and operational analytics. Pattern :
+1 plugin, 1 module Piilot `sap.connector`, 9 agent tools (Phase 2),
+1 KB plugin-owned "SAP metadata" (Phase 1).
 
 Plugins extend the Piilot core without modifying it. They ship in
 **two halves** from a single repo :
 
-- **Backend** (`piilot_pack_hello/`, published as `piilot-pack-hello`
+- **Backend** (`piilot_pack_sap/`, published as `piilot-pack-sap`
   on PyPI) — imports from `piilot.sdk.*` only, never from `backend.*`.
   Data lives in a dedicated PG schema named after the plugin.
-- **Frontend** (`frontend/`, published as `piilot-pack-hello-ui` on
+- **Frontend** (`frontend/`, published as `piilot-pack-sap-ui` on
   npm) — source-only package. Imports back into the host via
   `@plugin-host/*` alias. Contributes exactly 2 things : a module
   view and i18n bundles.
@@ -41,12 +41,12 @@ Plugins extend the Piilot core without modifying it. They ship in
    the planned Module Federation migration; deep paths break.
 3. **Namespace** — every identifier this plugin exposes (handler ids,
    tool ids, i18n keys, PG schema, env vars, HTTP routes, React
-   component file names) is prefixed by `hello`.
+   component file names) is prefixed by `sap`.
 4. **Migrations are idempotent** — every `CREATE TABLE` / `CREATE INDEX`
    / `CREATE SCHEMA` uses `IF NOT EXISTS`. Every `ADD COLUMN` uses
    `ADD COLUMN IF NOT EXISTS`. The loader refuses the plugin otherwise.
 5. **Routes** — if this plugin exposes HTTP routes, they live under
-   `/plugins/hello/` (no exception, webhooks included).
+   `/plugins/sap/` (no exception, webhooks included).
 6. **Secrets** — fields marked `type: secret` in the manifest's
    `credentials_schema` are encrypted at the DB boundary. Never log
    them, never store raw secrets in `config` JSON.
@@ -113,8 +113,8 @@ Target coverage : ≥ 80% on both halves.
 
 - Python 3.12+
 - `piilot-sdk` (pinned range in `pyproject.toml`, currently
-  `>=0.4.0,<1.0.0`)
-- PostgreSQL — plugin-owned schema `hello`
+  `>=0.7.0,<1.0.0`)
+- PostgreSQL — plugin-owned schema `integrations_sap`
 - Optional : LangChain `StructuredTool` for agent tools
 - Ruff + Black (CI enforces) · Pytest + pytest-cov
 
@@ -149,8 +149,8 @@ A plugin release is **two packages from the same repo** :
 
 | Package | Registry | Tag | Workflow |
 |---|---|---|---|
-| `piilot-pack-hello` (backend) | PyPI | `v<version>` | `.github/workflows/release.yml` |
-| `piilot-pack-hello-ui` (frontend) | npm | `ui-v<version>` | `.github/workflows/release-ui.yml` |
+| `piilot-pack-sap` (backend) | PyPI | `v<version>` | `.github/workflows/release.yml` |
+| `piilot-pack-sap-ui` (frontend) | npm | `ui-v<version>` | `.github/workflows/release-ui.yml` |
 
 Independent cadences : a backend hot-fix can ship without touching
 the frontend version, and vice-versa. Keep the two versions aligned
