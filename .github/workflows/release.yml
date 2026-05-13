@@ -1,0 +1,154 @@
+name: Release
+
+# Builds and publishes piilot-pack-hello to PyPI (or TestPyPI for
+# release candidates) whenever a tag matching `v*` is pushed.
+#
+# Tag convention:
+#   v0.1.0       → PyPI         (stable release)
+#   v0.1.0-rc1   → TestPyPI     (pre-release / dry run)
+#   v0.1.0-pre   → TestPyPI     (pre-release alias)
+#
+# Note: the npm frontend uses a separate `ui-v*` tag namespace +
+# release-ui.yml workflow. Backend and frontend ship independently.
+#
+# Authentication: OIDC Trusted Publisher (no token stored). PyPI +
+# TestPyPI projects must be configured to trust this workflow file
+# under Kinetics-Consulting-V2/piilot-pack-hello. See:
+#   https://docs.pypi.org/trusted-publishers/
+#
+# The wheel version comes from pyproject.toml's [project] version
+# — not from the tag. Bump the version in a commit, then tag matching.
+# A sanity check refuses to publish if tag + pyproject disagree.
+#
+# Important: the wheel ships pyproject.toml INSIDE the package dir
+# because the Piilot core loader reads [tool.piilot.plugin] from the
+# installed dist at boot. Without the copy step below, the manifest
+# is not discoverable at runtime. Same trick used by every first-party
+# plugin (piilot-pack-pennylane, piilot-pack-compta).
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build wheel + sdist
+    runs-on: ubuntu-latest
+    outputs:
+      is-rc: ${{ steps.parse.outputs.is-rc }}
+      version: ${{ steps.parse.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Parse tag and validate against pyproject version
+        id: parse
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Strip leading 'v' — remaining is the PEP 440 version
+          # (e.g. '0.1.0', '0.1.0rc1', '0.1.0-pre').
+          VERSION="${TAG#v}"
+
+          # Normalize '-rc1' / '-pre' into PEP 440 shape for comparison.
+          PEP440="${VERSION/-rc/rc}"
+          PEP440="${PEP440/-pre/rc0}"
+
+          PYPROJECT_VERSION=$(python -c "
+          import tomllib, pathlib
+          data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
+          print(data['project']['version'])
+          ")
+
+          echo "tag=$TAG"
+          echo "version-from-tag=$VERSION (normalized: $PEP440)"
+          echo "version-from-pyproject=$PYPROJECT_VERSION"
+
+          if [ "$PEP440" != "$PYPROJECT_VERSION" ]; then
+            echo "::error::Tag $TAG implies version $PEP440, but pyproject.toml declares $PYPROJECT_VERSION. Bump pyproject.toml and re-tag."
+            exit 1
+          fi
+
+          if [[ "$TAG" == *"-rc"* || "$TAG" == *"-pre"* ]]; then
+            echo "is-rc=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is-rc=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$PYPROJECT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install build tool
+        run: pip install --upgrade build
+
+      - name: Bundle pyproject.toml inside the package
+        # The core loader reads [tool.piilot.plugin] from the installed
+        # dist's pyproject.toml at boot. Wheels don't ship the repo-root
+        # pyproject by default, so we copy it inside the package dir
+        # where ``[tool.setuptools.package-data]`` picks it up. Removed
+        # after build (``if: always()``) to keep the source tree clean
+        # even on failed builds.
+        run: cp pyproject.toml piilot_pack_hello/pyproject.toml
+
+      - name: Build wheel + sdist
+        run: python -m build
+
+      - name: Clean up copied pyproject
+        if: always()
+        run: rm -f piilot_pack_hello/pyproject.toml
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piilot-pack-hello-dist
+          path: dist/
+          retention-days: 30
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: needs.build.outputs.is-rc == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/piilot-pack-hello/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: piilot-pack-hello-dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: needs.build.outputs.is-rc == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/piilot-pack-hello/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: piilot-pack-hello-dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true

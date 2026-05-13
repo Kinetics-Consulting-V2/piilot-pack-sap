@@ -1,0 +1,14 @@
+# CODEOWNERS for piilot-pack-hello
+# Edit this file after scaffolding to reflect the plugin's actual owners.
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-configuration/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+*                       @Sylvain
+
+# Plugin source and tests
+/piilot_pack_hello/  @Sylvain
+/tests/                              @Sylvain
+
+# CI & release infra
+/.github/                            @Sylvain
+/pyproject.toml                      @Sylvain

@@ -1,0 +1,12 @@
+{
+    "hello": {
+        "module": {
+            "title": "Hello module",
+            "open": "Open detail",
+            "detail": {
+                "body": "You are on the detail sub-view. Sub-routing is URL-backed.",
+                "back": "Back"
+            }
+        }
+    }
+}

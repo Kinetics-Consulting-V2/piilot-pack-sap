@@ -1,0 +1,12 @@
+{
+    "hello": {
+        "module": {
+            "title": "Module Hello",
+            "open": "Ouvrir le détail",
+            "detail": {
+                "body": "Vous êtes sur la sous-vue détail. Le sous-routing est porté par l'URL.",
+                "back": "Retour"
+            }
+        }
+    }
+}

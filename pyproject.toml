@@ -1,0 +1,125 @@
+[project]
+name = "piilot-pack-hello"
+version = "0.4.0"
+description = "Hello world plugin — Piilot SDK v0.6 scaffold starter."
+license = "apache-2.0"
+authors = [
+    { name = "TODO author name", email = "TODO@example.com" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+urls.homepage = "https://github.com/Kinetics-Consulting-V2/piilot-pack-hello"
+
+dependencies = [
+    "piilot-sdk>=0.6.0,<1.0.0",
+    "fastapi>=0.115",
+    "langchain-core>=0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "ruff>=0.9",
+    "black>=25.0",
+]
+
+[project.entry-points."piilot.plugins"]
+hello = "piilot_pack_hello:Plugin"
+
+# -----------------------------------------------------------------------------
+# Piilot plugin manifest
+# -----------------------------------------------------------------------------
+# See docs/sdk/PLUGIN_DEVELOPMENT.md (upstream piilot-sdk) for the full field
+# reference. Fields marked TODO must be edited before the first release.
+# -----------------------------------------------------------------------------
+
+[tool.piilot.plugin]
+manifest_version = 1
+namespace = "hello"
+sdk_compat = ">=0.6.0,<1.0.0"
+category = "other"
+supported_modes = ["saas", "selfhosted"]
+supported_locales = ["fr", "en"]
+default_access = "restricted"
+# icon = "./assets/icon.svg"  # TODO uncomment when you ship an icon
+
+# --- Modules (dashboards / workflow surfaces) ---
+[[tool.piilot.plugin.provides.modules]]
+id = "hello.dashboard"
+label_key = "hello.modules.dashboard.title"
+icon = "hand"
+
+# --- Agent tools (optional) ---
+# Register with piilot.sdk.tools.register_tool(spec). The manifest entry
+# here is informational — the runtime registry is populated by the call.
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "hello.greet"
+label_key = "hello.tools.greet.label"
+description_key = "hello.tools.greet.description"
+
+# --- Connectors (optional, commented — enable when you have a real API) ---
+# [[tool.piilot.plugin.provides.connectors]]
+# id = "hello.api"
+# label_key = "hello.connectors.api.label"
+# auth_type = "api_key"
+#
+# [[tool.piilot.plugin.provides.connectors.credentials_schema]]
+# name = "api_key"
+# type = "secret"
+# required = true
+
+# --- Scheduled jobs (optional, commented) ---
+# [[tool.piilot.plugin.provides.scheduled_jobs]]
+# id = "hello.nightly_sync"
+# schedule = "daily"
+
+[tool.piilot.plugin.permissions]
+reads = ["public.companies"]
+writes = ["hello.*"]
+external_apis = []
+
+# -----------------------------------------------------------------------------
+# Build backend
+# -----------------------------------------------------------------------------
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["piilot_pack_hello*"]
+
+# Ship JSON locale catalogs + SQL migrations + the plugin manifest
+# alongside the Python code. The core loader reads
+# ``[tool.piilot.plugin]`` from the installed dist's pyproject.toml at
+# boot — wheels don't include the repo-root pyproject by default, so
+# we declare it as package data here AND copy it into the package dir
+# in the release workflow. Same pattern as piilot-pack-pennylane /
+# piilot-pack-compta.
+[tool.setuptools.package-data]
+"piilot_pack_hello" = [
+    "locales/*.json",
+    "migrations/*.sql",
+    "pyproject.toml",
+]
+
+# -----------------------------------------------------------------------------
+# Lint / format
+# -----------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
