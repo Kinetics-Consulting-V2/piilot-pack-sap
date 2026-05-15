@@ -41,3 +41,8 @@ docker-compose.override.yml
 
 # MCP / local config
 .mcp.json
+
+# Frontend (Node / npm — installed at npm install time, never committed)
+node_modules/
+*.tsbuildinfo
+.vitest-cache/

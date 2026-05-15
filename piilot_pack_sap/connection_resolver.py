@@ -76,6 +76,36 @@ class ConnectionResolver:
     ) -> None:
         self._default_version = default_version
 
+    async def resolve_for_connection_id(
+        self,
+        *,
+        connection_id: str,
+        company_id: str,
+    ) -> ResolvedConnection:
+        """Resolve a specific connection by id (HTTP route entry point).
+
+        Used by ``/test`` and ``/sync`` routes that already carry an
+        explicit connection id in the URL — there's no session scope to
+        consult, and the caller doesn't want the resolver's fallback to
+        the "active connection" to silently pick a different row.
+        """
+        if not connection_id:
+            raise ResolutionError("connection_id is required")
+        if not company_id:
+            raise ResolutionError("company_id is required")
+        row = await run_in_thread(
+            repository.get_connection_by_id, connection_id
+        )
+        if row is None:
+            raise ResolutionError(
+                f"connection_id={connection_id!r} not found"
+            )
+        if row.get("company_id") != company_id:
+            raise ResolutionError(
+                "connection belongs to another company"
+            )
+        return await self._build_from_row(row)
+
     async def resolve(
         self,
         *,
@@ -113,6 +143,9 @@ class ConnectionResolver:
                     "no active SAP connection configured for this tenant"
                 )
 
+        return await self._build_from_row(row)
+
+    async def _build_from_row(self, row: dict[str, Any]) -> ResolvedConnection:
         auth_mode: AuthMode = row.get("auth_mode") or "basic"
         version = self._default_version
         # Future: persist a per-connection ``odata_version`` column. For

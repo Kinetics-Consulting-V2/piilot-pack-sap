@@ -1,12 +1,107 @@
 {
     "sap": {
-        "module": {
-            "title": "Hello module",
-            "open": "Open detail",
-            "detail": {
-                "body": "You are on the detail sub-view. Sub-routing is URL-backed.",
-                "back": "Back"
+        "modules": {
+            "connector": {
+                "title": "SAP S/4HANA Cloud",
+                "description": "Connect to your SAP S/4HANA Cloud instance via OData. Read-only access for AI agents, full audit trail of every query."
             }
+        },
+        "view": {
+            "tabs": {
+                "connection": "Connection",
+                "status": "Status",
+                "browser": "Browser",
+                "audit": "Audit"
+            }
+        },
+        "connection": {
+            "subtitle": "Manage the SAP S/4HANA Cloud instances your agents can reach.",
+            "new": "+ New connection",
+            "list_title": "Registered connections",
+            "loading": "Loading…",
+            "empty": "No connection yet. Click '+ New connection' to create one.",
+            "col_label": "Label",
+            "col_base_url": "URL",
+            "col_auth_mode": "Auth",
+            "col_health": "Health",
+            "col_actions": "Actions",
+            "testing": "Testing…",
+            "test": "Test",
+            "delete": "Delete",
+            "delete_confirm": "Delete this connection? Snapshots and audit log will be preserved.",
+            "dialog_title": "New SAP connection",
+            "field_label": "Connection name",
+            "field_base_url": "OData root URL",
+            "field_auth_mode": "Authentication mode",
+            "field_basic_username": "Username",
+            "field_basic_password": "Password",
+            "field_oauth_token_url": "OAuth token URL",
+            "field_oauth_client_id": "Client ID",
+            "field_oauth_client_secret": "Client Secret",
+            "field_oauth_scope": "Scope (optional)",
+            "cancel": "Cancel",
+            "submit": "Create",
+            "submitting": "Creating…",
+            "health_unknown": "Untested",
+            "health_ok": "OK",
+            "health_error": "Error"
+        },
+        "status": {
+            "empty": "Select a connection in the Connection tab.",
+            "loading": "Loading…",
+            "base_url": "OData URL",
+            "auth_mode": "Authentication",
+            "last_health_check_at": "Last test",
+            "entity_set_count": "EntitySets in cache",
+            "testing": "Testing…",
+            "test": "Test connection",
+            "syncing": "Syncing…",
+            "sync": "Re-sync $metadata",
+            "test_ok": "Connection OK",
+            "test_failed": "Test failed",
+            "test_entity_count": "{{count}} EntitySets exposed (OData {{version}})",
+            "sync_done": "Sync completed",
+            "sync_summary": "{{rows}} entities persisted · KB {{kbId}} ({{inserted}} added / {{updated}} updated)",
+            "health_ok": "OK",
+            "health_error": "Error",
+            "health_unknown": "Untested"
+        },
+        "browser": {
+            "empty": "Select a connection in the Connection tab to explore its entities.",
+            "title": "Cached SAP entities",
+            "loading": "Loading…",
+            "no_entities": "Cache is empty. Run a sync from the Status tab.",
+            "count": "{{shown}} / {{total}} entities",
+            "search_placeholder": "Search (name, label, description)…",
+            "col_name": "EntitySet",
+            "col_label": "Label",
+            "col_description": "Description",
+            "detail_loading": "Loading…",
+            "detail_properties": "Properties",
+            "detail_navigations": "Navigations",
+            "detail_col_name": "Name",
+            "detail_col_type": "Type",
+            "detail_col_label": "SAP label",
+            "detail_col_filter": "Filterable"
+        },
+        "audit": {
+            "empty": "Select a connection in the Connection tab.",
+            "title": "OData audit log",
+            "loading": "Loading…",
+            "no_rows": "No request recorded for these criteria.",
+            "refresh": "Refresh",
+            "col_time": "Time",
+            "col_tool": "Tool",
+            "col_entity": "Entity",
+            "col_status": "Status",
+            "col_latency": "Latency",
+            "col_result": "Results",
+            "filter_all": "All",
+            "filter_ok": "OK",
+            "filter_http_error": "HTTP errors",
+            "filter_validator_rejected": "Validator rejections",
+            "filter_auth_error": "Auth errors",
+            "filter_rate_limited": "Rate limited"
         }
     }
 }

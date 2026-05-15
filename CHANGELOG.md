@@ -14,6 +14,87 @@ plugin follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 3 (HTTP routes CRUD + frontend SAPConnectorView)
+
+- **`piilot_pack_sap/routes.py`** — 11 endpoints under
+  ``/plugins/sap/*``. Connection CRUD (``GET / POST / PATCH / DELETE``)
+  with ``require_user`` / ``require_builder`` / ``require_admin``
+  gating per route. Encrypted credentials routed through
+  ``piilot.sdk.connectors.save_connection`` + ``update_config``
+  + ``delete_connection`` (auto-encrypts ``type: secret`` fields).
+  ``POST /connections/{id}/test`` fetches ``$metadata`` once for a
+  reachability check (no persistence); ``POST /connections/{id}/sync``
+  fetches + persists snapshot + re-seeds the plugin-owned KB.
+  ``GET /connections/{id}/entities`` / ``…/{name}`` /
+  ``…/audit`` for browsing.
+
+- **`piilot_pack_sap/connection_resolver.py` extension** — new
+  public method ``resolve_for_connection_id(connection_id,
+  company_id)`` that bypasses the session-scope lookup and loads a
+  specific connection directly. Used by ``/test`` and ``/sync``
+  routes that already carry an explicit id in the URL — the agent
+  tool path keeps using the original ``resolve`` (scope-first).
+
+- **`piilot_pack_sap/repository.py` extension** — new CRUD helpers
+  ``insert_connection``, ``update_connection`` (allow-list of
+  mutable fields), ``delete_connection`` (cascade preserved on
+  audit_log via ON DELETE SET NULL), ``set_connection_health``
+  (timestamp + status + error).
+
+- **Frontend `SAPConnectorView.tsx`** — refactored from the Phase 0
+  banner into a shadcn ``Tabs`` shell with 4 URL-driven panels
+  (``?tab=connection|status|browser|audit``). Cross-panel state
+  (selected ``connection_id``) lives at the view level and is
+  echoed into the URL so a refresh restores the selection.
+
+- **Frontend `components/ConnectionPanel.tsx`** — list of
+  connections with Test / Delete actions per row + creation
+  dialog. The form gates credentials fields by ``auth_mode``
+  (basic vs oauth_client_credentials) and refuses submission
+  until every required field is filled.
+
+- **Frontend `components/StatusPanel.tsx`** — card view of the
+  selected connection (URL, auth mode, last health, cached entity
+  count) with Test + Sync action buttons. Sync result surfaces the
+  KB outcome inline.
+
+- **Frontend `components/EntityBrowser.tsx`** — searchable table
+  of cached EntitySets with client-side substring filter (renders
+  up to 200 rows at a time). Clicking a row opens a dialog that
+  fetches ``payload`` (properties + navigations) lazily via
+  ``getEntity``.
+
+- **Frontend `components/AuditLogPanel.tsx`** — paginated audit log
+  with a status dropdown (all / ok / http_error /
+  validator_rejected / auth_error / rate_limited) + manual refresh.
+
+- **Frontend `services/sapClient.ts`** — typed wrapper over the 11
+  backend endpoints. Every method delegates to
+  ``apiFetch`` from ``@plugin-host/services/httpClient``.
+
+- **Frontend locales** — full rewrite of ``locales/{fr,en}.json``
+  (the Phase 0 file was still the hello-world template). 60+ keys
+  organized under ``sap.{connection,status,browser,audit,view}.*``.
+
+- **Vitest setup** — ``vitest.config.ts`` aliases ``@plugin-host``
+  to a local stub tree under ``__tests__/stubs/plugin-host/``
+  (services + lib + UI primitives) so tests resolve imports
+  without the real host being present. 19 frontend tests covering
+  ``sapClient`` URL construction + the ``index.ts``
+  ``register(core)`` smoke test.
+
+- **`.gitignore`** — ignore ``node_modules/`` and
+  ``*.tsbuildinfo`` (npm install happens locally / in CI, never
+  committed).
+
+### Tests
+
+- 45 new pytest tests (28 routes + 17 repository extensions),
+  plus 19 vitest tests on the frontend side. Total: 373 unit
+  Python + 19 unit TypeScript + 5 live SAP = **397 tests**.
+  Coverage: 95% on the Python package (no regression — every new
+  module ≥ 95%).
+
 ### Added — Phase 2 (9 agent tools + connection resolver + executor)
 
 - **`piilot_pack_sap/connection_resolver.py`** — async resolver that

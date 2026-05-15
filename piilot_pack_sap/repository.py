@@ -83,6 +83,115 @@ def get_connection_by_id(connection_id: str) -> Optional[dict[str, Any]]:
         return cur.fetchone()
 
 
+def insert_connection(
+    *,
+    company_id: str,
+    label: str,
+    base_url: str,
+    auth_mode: str,
+    plugin_connection_id: Optional[str] = None,
+    is_active: bool = True,
+) -> str:
+    """Create a row in ``integrations_sap.connections`` and return its id.
+
+    ``plugin_connection_id`` is the id of the encrypted-credentials row in
+    the core's ``plugin_connections`` table (managed by the SDK
+    ``piilot.sdk.connectors`` primitives). Pass ``None`` only for tests or
+    legacy connections that don't carry secrets.
+    """
+    with cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO integrations_sap.connections
+                (company_id, label, base_url, auth_mode,
+                 plugin_connection_id, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                company_id,
+                label,
+                base_url.rstrip("/"),
+                auth_mode,
+                plugin_connection_id,
+                is_active,
+            ),
+        )
+        row = cur.fetchone()
+        return str(row["id"])
+
+
+_UPDATABLE_CONNECTION_FIELDS: frozenset[str] = frozenset(
+    {
+        "label",
+        "base_url",
+        "auth_mode",
+        "plugin_connection_id",
+        "is_active",
+    }
+)
+
+
+def update_connection(connection_id: str, **fields: Any) -> bool:
+    """Update an allow-listed subset of fields. Returns True if a row matched.
+
+    Ignores unknown fields silently. Whitelist enforced server-side to keep
+    the route layer from accidentally exposing immutable columns.
+    """
+    payload = {k: v for k, v in fields.items() if k in _UPDATABLE_CONNECTION_FIELDS}
+    if not payload:
+        return False
+    set_clause = ", ".join(f"{name} = %s" for name in payload)
+    params: list[Any] = list(payload.values())
+    params.append(connection_id)
+    with cursor() as cur:
+        cur.execute(
+            f"""
+            UPDATE integrations_sap.connections
+            SET {set_clause}
+            WHERE id = %s
+            """,
+            tuple(params),
+        )
+        return cur.rowcount > 0
+
+
+def delete_connection(connection_id: str) -> bool:
+    """Delete a connection. Cascade removes its schema_snapshot rows; the
+    audit log keeps its rows (``ON DELETE SET NULL`` on ``connection_id``).
+    Returns True if a row was removed."""
+    with cursor() as cur:
+        cur.execute(
+            """
+            DELETE FROM integrations_sap.connections
+            WHERE id = %s
+            """,
+            (connection_id,),
+        )
+        return cur.rowcount > 0
+
+
+def set_connection_health(
+    *,
+    connection_id: str,
+    status: str,
+    error: Optional[str] = None,
+) -> bool:
+    """Record the outcome of a ``POST /test`` call on a connection."""
+    with cursor() as cur:
+        cur.execute(
+            """
+            UPDATE integrations_sap.connections
+            SET last_health_check_at = now(),
+                last_health_status   = %s,
+                last_health_error    = %s
+            WHERE id = %s
+            """,
+            (status, error, connection_id),
+        )
+        return cur.rowcount > 0
+
+
 def get_active_connection(company_id: str) -> Optional[dict[str, Any]]:
     """Return the most recently updated active connection for the company.
 
@@ -314,12 +423,16 @@ def list_audit_log(
 __all__ = [
     "AuditEntry",
     "SnapshotEntry",
+    "delete_connection",
     "get_active_connection",
     "get_connection_by_id",
     "get_snapshot_entry",
     "insert_audit_log",
+    "insert_connection",
     "list_audit_log",
     "list_connections",
     "list_schema_snapshot",
+    "set_connection_health",
+    "update_connection",
     "upsert_schema_snapshot",
 ]

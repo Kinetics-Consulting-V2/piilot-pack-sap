@@ -1,12 +1,107 @@
 {
     "sap": {
-        "module": {
-            "title": "Module Hello",
-            "open": "Ouvrir le détail",
-            "detail": {
-                "body": "Vous êtes sur la sous-vue détail. Le sous-routing est porté par l'URL.",
-                "back": "Retour"
+        "modules": {
+            "connector": {
+                "title": "SAP S/4HANA Cloud",
+                "description": "Connectez-vous à votre instance SAP S/4HANA Cloud via OData. Lecture seule par les agents IA, audit complet de chaque requête."
             }
+        },
+        "view": {
+            "tabs": {
+                "connection": "Connexion",
+                "status": "Statut",
+                "browser": "Explorateur",
+                "audit": "Audit"
+            }
+        },
+        "connection": {
+            "subtitle": "Gérez les instances SAP S/4HANA Cloud accessibles depuis vos agents.",
+            "new": "+ Nouvelle connexion",
+            "list_title": "Connexions enregistrées",
+            "loading": "Chargement…",
+            "empty": "Aucune connexion. Cliquez sur « + Nouvelle connexion » pour en créer une.",
+            "col_label": "Label",
+            "col_base_url": "URL",
+            "col_auth_mode": "Auth",
+            "col_health": "Santé",
+            "col_actions": "Actions",
+            "testing": "Test…",
+            "test": "Tester",
+            "delete": "Supprimer",
+            "delete_confirm": "Supprimer cette connexion ? Les snapshots et l'audit log seront conservés.",
+            "dialog_title": "Nouvelle connexion SAP",
+            "field_label": "Nom de la connexion",
+            "field_base_url": "URL OData racine",
+            "field_auth_mode": "Mode d'authentification",
+            "field_basic_username": "Nom d'utilisateur",
+            "field_basic_password": "Mot de passe",
+            "field_oauth_token_url": "URL du token OAuth",
+            "field_oauth_client_id": "Client ID",
+            "field_oauth_client_secret": "Client Secret",
+            "field_oauth_scope": "Scope (optionnel)",
+            "cancel": "Annuler",
+            "submit": "Créer",
+            "submitting": "Création…",
+            "health_unknown": "Non testé",
+            "health_ok": "OK",
+            "health_error": "Erreur"
+        },
+        "status": {
+            "empty": "Sélectionnez une connexion dans l'onglet Connexion.",
+            "loading": "Chargement…",
+            "base_url": "URL OData",
+            "auth_mode": "Authentification",
+            "last_health_check_at": "Dernier test",
+            "entity_set_count": "EntitySets dans le cache",
+            "testing": "Test en cours…",
+            "test": "Tester la connexion",
+            "syncing": "Sync en cours…",
+            "sync": "Re-synchroniser $metadata",
+            "test_ok": "Connexion OK",
+            "test_failed": "Échec du test",
+            "test_entity_count": "{{count}} EntitySets exposées (OData {{version}})",
+            "sync_done": "Synchronisation terminée",
+            "sync_summary": "{{rows}} entités persistées · KB {{kbId}} ({{inserted}} ajoutées / {{updated}} mises à jour)",
+            "health_ok": "OK",
+            "health_error": "Erreur",
+            "health_unknown": "Non testé"
+        },
+        "browser": {
+            "empty": "Sélectionnez une connexion dans l'onglet Connexion pour explorer ses entités.",
+            "title": "Entités SAP en cache",
+            "loading": "Chargement…",
+            "no_entities": "Aucune entité dans le cache. Lancez une synchronisation depuis l'onglet Statut.",
+            "count": "{{shown}} / {{total}} entités",
+            "search_placeholder": "Rechercher (nom, label, description)…",
+            "col_name": "EntitySet",
+            "col_label": "Label",
+            "col_description": "Description",
+            "detail_loading": "Chargement…",
+            "detail_properties": "Propriétés",
+            "detail_navigations": "Navigations",
+            "detail_col_name": "Nom",
+            "detail_col_type": "Type",
+            "detail_col_label": "SAP label",
+            "detail_col_filter": "Filtrable"
+        },
+        "audit": {
+            "empty": "Sélectionnez une connexion dans l'onglet Connexion.",
+            "title": "Journal d'audit OData",
+            "loading": "Chargement…",
+            "no_rows": "Aucune requête enregistrée pour ces critères.",
+            "refresh": "Rafraîchir",
+            "col_time": "Date",
+            "col_tool": "Tool",
+            "col_entity": "Entité",
+            "col_status": "Statut",
+            "col_latency": "Latence",
+            "col_result": "Résultats",
+            "filter_all": "Tous",
+            "filter_ok": "OK",
+            "filter_http_error": "Erreurs HTTP",
+            "filter_validator_rejected": "Refusés validator",
+            "filter_auth_error": "Erreurs auth",
+            "filter_rate_limited": "Rate limited"
         }
     }
 }

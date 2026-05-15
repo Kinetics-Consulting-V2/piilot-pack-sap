@@ -257,6 +257,103 @@ def test_get_active_connection_returns_none_when_no_match(mock_cursor) -> None:
     assert repository.get_active_connection("comp-1") is None
 
 
+# ---------- insert / update / delete / set_health -------------------------
+
+
+def test_insert_connection_returns_id(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "new-uuid"}
+    cid = repository.insert_connection(
+        company_id="comp-1",
+        label="Sandbox",
+        base_url="https://example.sap/",
+        auth_mode="basic",
+        plugin_connection_id="plug-1",
+    )
+    assert cid == "new-uuid"
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "INSERT INTO integrations_sap.connections" in sql
+    assert "RETURNING id" in sql
+    # base_url trailing slash stripped.
+    assert params[2] == "https://example.sap"
+    assert params[3] == "basic"
+    assert params[4] == "plug-1"
+
+
+def test_insert_connection_accepts_no_plugin_connection_id(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "id"}
+    repository.insert_connection(
+        company_id="c",
+        label="x",
+        base_url="https://x",
+        auth_mode="basic",
+    )
+    params = mock_cursor.execute.call_args[0][1]
+    assert params[4] is None
+
+
+def test_update_connection_filters_allowlist(mock_cursor) -> None:
+    mock_cursor.rowcount = 1
+    ok = repository.update_connection(
+        "conn-1",
+        label="New",
+        base_url="https://x",
+        unknown_field="should_be_ignored",
+        company_id="HACK",  # immutable: filtered out
+    )
+    assert ok is True
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "label = %s" in sql
+    assert "base_url = %s" in sql
+    assert "company_id" not in sql
+    assert "unknown_field" not in sql
+    assert params[-1] == "conn-1"
+
+
+def test_update_connection_returns_false_when_nothing_to_update(mock_cursor) -> None:
+    assert repository.update_connection("conn-1") is False
+    mock_cursor.execute.assert_not_called()
+
+
+def test_update_connection_returns_false_when_no_row_matched(mock_cursor) -> None:
+    mock_cursor.rowcount = 0
+    assert repository.update_connection("conn-x", label="Z") is False
+
+
+def test_delete_connection_returns_true_when_deleted(mock_cursor) -> None:
+    mock_cursor.rowcount = 1
+    assert repository.delete_connection("conn-1") is True
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "DELETE FROM integrations_sap.connections" in sql
+    assert params == ("conn-1",)
+
+
+def test_delete_connection_returns_false_when_missing(mock_cursor) -> None:
+    mock_cursor.rowcount = 0
+    assert repository.delete_connection("ghost") is False
+
+
+def test_set_connection_health_updates_three_fields(mock_cursor) -> None:
+    mock_cursor.rowcount = 1
+    ok = repository.set_connection_health(
+        connection_id="conn-1", status="ok"
+    )
+    assert ok is True
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "last_health_check_at = now()" in sql
+    assert "last_health_status" in sql
+    assert "last_health_error" in sql
+    assert params == ("ok", None, "conn-1")
+
+
+def test_set_connection_health_carries_error(mock_cursor) -> None:
+    mock_cursor.rowcount = 1
+    repository.set_connection_health(
+        connection_id="c", status="error", error="boom"
+    )
+    params = mock_cursor.execute.call_args[0][1]
+    assert params == ("error", "boom", "c")
+
+
 # ---------- list_audit_log --------------------------------------------------
 
 
