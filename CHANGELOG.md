@@ -14,6 +14,61 @@ plugin follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 4 (hardening + mount tests + onboarding doc)
+
+- **`piilot_pack_sap/rate_limit.py`** — in-memory sliding-window
+  rate limiter scoped by ``(company_id, bucket)``. Three buckets
+  with separate budgets: ``read`` (60/min on GETs), ``write``
+  (10/min on POST/PATCH/DELETE), ``heavy`` (5/min on ``/test`` and
+  ``/sync`` which fire one ``$metadata`` request each). Refusals
+  carry ``Retry-After`` headers computed from the oldest entry in
+  the window. Exposed as three FastAPI ``Depends`` callables
+  attached to the routes via ``dependencies=[...]``.
+
+- **`piilot_pack_sap/cost_guard.py`** — per-session SAP tool call
+  counter. Default budget: 30 tool calls / session (overridable
+  via ``SAP_TOOL_BUDGET_PER_SESSION`` env var, read at import).
+  ``execute_odata_call`` and ``execute_raw_call`` check the
+  counter before resolving any connection — when the cap is
+  reached, the tool returns
+  ``status="cost_limit_exceeded"`` without hitting SAP. Concurrent
+  increments serialized by ``asyncio.Lock`` (no over-counting under
+  parallel agent fanouts).
+
+- **`tests/conftest.py` autouse fixture** — wipes the rate limiter
+  + cost tracker between every test so module-level state never
+  leaks. Without this, the 5/min ``heavy`` bucket would 429 the
+  6th sync test instead of exercising route logic.
+
+- **Mount tests for the 4 frontend panels** — ConnectionPanel,
+  StatusPanel, EntityBrowser, AuditLogPanel. Setup file at
+  ``__tests__/setup.tsx`` registers ``@testing-library/jest-dom``
+  matchers and stubs ``react-i18next`` + ``react-router-dom``
+  globally. Per-file ``vi.hoisted`` blocks pre-declare the
+  ``sapClient`` mock fns so the factory ``vi.mock`` reads them at
+  the right hoist order. 22 new vitest tests covering: empty
+  state, fetch success, fetch error, user interaction
+  (button clicks, form input, filter typing, dialog open/close).
+  All 41 frontend tests run in ~1.7s.
+
+- **`@testing-library/user-event@^14`** added to devDependencies
+  for realistic interaction simulation in mount tests.
+
+- **README rewrite** — full SAP-side onboarding guide (Basic auth
+  Communication User vs OAuth client_credentials via BTP), table
+  of the 9 agent tools with sample agent prompts, troubleshooting
+  section covering UCON 403, 401 password rotation, 406, parse
+  errors, validator rejections, cost limit, X-Company-Id gating.
+
+### Tests
+
+- **Python**: 27 new tests (rate_limit 9, cost_guard 13, plus
+  conftest tweaks that fix accumulation in 5 routes tests).
+  Total Python: 400 unit + 5 live = 405.
+- **TypeScript**: 22 new vitest mount tests. Total frontend: 41.
+- **Grand total**: 446 tests verts. Coverage Python: 94%
+  (no module under 82%).
+
 ### Added — Phase 3 (HTTP routes CRUD + frontend SAPConnectorView)
 
 - **`piilot_pack_sap/routes.py`** — 11 endpoints under

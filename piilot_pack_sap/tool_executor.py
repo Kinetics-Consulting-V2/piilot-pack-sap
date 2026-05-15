@@ -25,6 +25,7 @@ from piilot.sdk.session import get as get_session
 
 from piilot_pack_sap import audit
 from piilot_pack_sap.auth import AuthError
+from piilot_pack_sap.cost_guard import tracker as cost_tracker
 from piilot_pack_sap.connection_resolver import (
     ConnectionResolver,
     ResolutionError,
@@ -114,6 +115,17 @@ async def execute_odata_call(
         company_id = resolve_company_id(session_id)
     except SessionUnknownError as exc:
         return ToolResult(status="session_unknown", error=str(exc))
+
+    allowed, count = await cost_tracker.check_and_increment(session_id)
+    if not allowed:
+        return ToolResult(
+            status="cost_limit_exceeded",
+            error=(
+                f"SAP tool budget exhausted for this session "
+                f"({count}/{cost_tracker.budget} calls). Wait for the "
+                "next session or raise SAP_TOOL_BUDGET_PER_SESSION."
+            ),
+        )
 
     try:
         resolved = await resolver.resolve(
@@ -269,6 +281,17 @@ async def execute_raw_call(
         company_id = resolve_company_id(session_id)
     except SessionUnknownError as exc:
         return ToolResult(status="session_unknown", error=str(exc))
+
+    allowed, count = await cost_tracker.check_and_increment(session_id)
+    if not allowed:
+        return ToolResult(
+            status="cost_limit_exceeded",
+            error=(
+                f"SAP tool budget exhausted for this session "
+                f"({count}/{cost_tracker.budget} calls). Wait for the "
+                "next session or raise SAP_TOOL_BUDGET_PER_SESSION."
+            ),
+        )
 
     try:
         resolved = await resolver.resolve(

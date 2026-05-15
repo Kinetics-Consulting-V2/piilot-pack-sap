@@ -99,6 +99,21 @@ def _patched_run_in_thread():
         yield
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Clear the shared rate-limit buckets between tests.
+
+    Without this, every ``POST /test`` and ``POST /sync`` in the suite
+    would accumulate into the ``heavy`` bucket (limit 5/min) and the
+    6th+ tests would 429 instead of exercising the real route logic.
+    """
+    from piilot_pack_sap.rate_limit import limiter
+
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
 # ---------- Health ---------------------------------------------------------
 
 

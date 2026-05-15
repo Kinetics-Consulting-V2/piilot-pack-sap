@@ -59,24 +59,35 @@ X.509 cert auth is deferred to v1.1.
 
 ## Status
 
-🟡 **v0.1.0 — Phase 0 scaffolding** (unreleased)
+🟢 **v0.1.0 — Phases 0 + 1 + 2 + 3 + 4 ready** (pending tag)
 
-This release ships the plugin skeleton :
+What ships:
 
-* Manifest declared (namespace, module, connector, permissions).
-* Migration `001_init_sap.sql` (3 tables : connections, schema_snapshot,
-  audit_log) with RLS.
-* `Plugin.register()` wires migrations, i18n, module handler,
-  connector spec, routes (no-op tools, no-op seeds for KB / agent
-  templates).
-* Frontend `SAPConnectorView` with phase banner.
+* **3 tables** plugin-owned schema `integrations_sap`: `connections`,
+  `schema_snapshot`, `audit_log`. RLS enforced.
+* **Live OData v2 / v4 client** with auto-version detection,
+  retries on 429+5xx (`Retry-After`-aware), three auth strategies
+  (`ApiKey`, `Basic`, `OAuth client_credentials`).
+* **Strict whitelist validator** — fails closed on `$expand`,
+  `$batch`, function calls, lambda operators, navigation paths,
+  mutations. Fuzzed against 14 attack payloads.
+* **11 HTTP endpoints** under `/plugins/sap/*` (CRUD + test +
+  sync + entities + audit), gated by `require_user` /
+  `require_builder` / `require_admin`, rate-limited per company.
+* **9 agent tools** (cf. table below) wrapped with `bind_session`,
+  audited on every call, capped by a per-session cost guard
+  (default 30 calls).
+* **Frontend `SAPConnectorView`** with 4 shadcn `Tabs`:
+  Connection / Status / Browser / Audit. URL-driven sub-routing.
+* **Plugin-owned KB** "SAP Metadata — &lt;connection&gt;"
+  auto-seeded on first sync, refreshed idempotently on every
+  re-sync.
 
-**No OData traffic yet.** Phases 1 → 5 add the real functionality —
-introspect `$metadata`, parser/validator, 9 agent tools, 4-tab UX,
-hardening, beta dogfood.
+Test coverage: **~400 unit tests** (Python + TypeScript) + **5 live
+sandbox** tests at 95% Python coverage.
 
 See `AICockpit/docs/docs_dev/suivi.md` (internal) for the phase-by-phase
-checklist.
+journal.
 
 ---
 
@@ -139,8 +150,186 @@ its own `integrations_sap.connections` row.
 **Required SAP role** : the Communication User (Basic) or the
 Communication Arrangement (OAuth) MUST have a **PFCG role restricted
 to read-only access** on the EntitySets you want Piilot to consume.
-See `docs/SAP_ROLE_SETUP.md` (Phase 4 deliverable) for the SAP
-transaction snippets.
+See the *SAP-side setup* section below.
+
+---
+
+## SAP-side setup
+
+### Option A — Basic auth Communication User
+
+Quick way to onboard, suitable for trial instances or sandboxed
+environments. NOT recommended for productive S/4HANA Cloud tenants
+(use OAuth client_credentials instead).
+
+1. **SAP S/4HANA Cloud** — log in with an admin user.
+2. Open the **Maintain Communication Users** app
+   (transaction code `SU05` on-premise; Communication Management
+   tile on Cloud).
+3. Create a **technical user** named e.g. `PIILOT_AGENT`. Generate a
+   strong password (≥ 24 chars).
+4. Go to **Communication Systems** and create a system pointing at
+   Piilot's outbound IP range (your tenant's egress).
+5. Go to **Communication Arrangements** and assign every OData service
+   you want to expose (e.g. `SAP_COM_0507` for Business Partner,
+   `SAP_COM_0019` for General Ledger).
+6. Pick the technical user `PIILOT_AGENT` in the Arrangement's
+   **Inbound Communication** section.
+7. Note the **service URL** (base URL) printed at the bottom of each
+   Arrangement page. Format:
+   `https://<tenant>-api.s4hana.cloud.sap/sap/opu/odata/sap/<SERVICE>`.
+8. In the Piilot UI, **Connection** tab → **+ New connection** →
+   choose `auth_mode = basic`, paste the URL + username + password.
+
+### Option B — OAuth 2.0 client_credentials (recommended)
+
+Standard for productive S/4HANA Cloud. Token rotation handled by SAP
+BTP; no shared passwords on the wire.
+
+1. **SAP BTP Cockpit** → open the **XSUAA** service for the subaccount
+   that hosts the S/4HANA Cloud subscription.
+2. Create a new **service instance** with plan `application`. The
+   `xs-security.json` should expose a `read` scope per OData service.
+3. Create a **service key** on the instance. The key contains :
+   - `clientid` → Piilot's "Client ID"
+   - `clientsecret` → Piilot's "Client Secret"
+   - `url` → token endpoint; append `/oauth/token` → Piilot's
+     "Token URL"
+4. Bind the BTP scope to a **Communication Arrangement** in S/4HANA
+   Cloud (same arrangement as Option A, but check "OAuth 2.0
+   Client Credentials Grant" instead of "Basic").
+5. In the Piilot UI, **Connection** tab → **+ New connection** →
+   choose `auth_mode = oauth_client_credentials`, paste the four
+   fields (`token_url`, `client_id`, `client_secret`, optional
+   `scope`).
+
+### Verify connectivity
+
+After saving the connection, open the **Status** tab and click
+**Test connection**. The route fetches `$metadata` once and returns
+either `ok` + entity_set_count, or a structured error. If it works,
+click **Re-sync $metadata** to populate the local snapshot cache and
+seed the plugin-owned KB.
+
+---
+
+## Agent tools — the 9 OData verbs
+
+Every tool is exposed to Piilot agents as `sap_<name>` (LangChain
+`StructuredTool`). `session_id` is injected by the runtime
+(`bind_session`) so the LLM never picks the connection.
+
+| Tool | Purpose | Sample agent prompt |
+|---|---|---|
+| `sap_search_entity` | substring search the cached EntitySet catalogue | "Trouve l'entité SAP qui contient les factures clients." |
+| `sap_describe_entity` | return cached `$metadata` for one EntitySet | "Quelles colonnes a `A_BusinessPartner` ?" |
+| `sap_select` | filtered + projected GET | "Liste les 10 premiers BP créés en 2026." |
+| `sap_count` | row count | "Combien de BP catégorie '2' ?" |
+| `sap_top_n` | wrapper $top + $orderby | "Top 5 commandes par montant décroissant." |
+| `sap_aggregate` | `$apply=aggregate(...)` | "Somme des montants par mois." |
+| `sap_navigate` | follow a Navigation Property | "Adresses du BP '11'." |
+| `sap_lookup` | **admin only**: single record by primary key including technical fields | "Fetch the raw `A_GLAccount` row '400000'." |
+| `sap_invoke_function` | **admin only**: invoke a read-only OData function import | "Run `ComputeBalance(CompanyCode='1000', Year=2026)`." |
+
+All tools return a structured dict the LLM can parse directly:
+
+```json
+{
+    "status": "ok",
+    "data": { ... },
+    "connection_label": "Sandbox",
+    "audit_id": "uuid"
+}
+```
+
+Possible `status` values: `ok` / `validator_rejected` /
+`auth_error` / `http_error` / `rate_limited` / `timeout` /
+`parse_error` / `resolution_error` / `session_unknown` /
+`forbidden` / `cost_limit_exceeded` / `not_found`.
+
+### Cost guard
+
+Every call increments a per-session counter. The default cap is
+**30 tool calls per session** (configurable via the
+`SAP_TOOL_BUDGET_PER_SESSION` env var). Beyond the cap, the tool
+returns `status="cost_limit_exceeded"` without hitting SAP. Sessions
+are short-lived (≤30 min by host policy), so the counter resets
+naturally.
+
+### Rate limit
+
+HTTP routes enforce per-company sliding-window limits:
+
+* GET endpoints — 60/min
+* POST / PATCH / DELETE — 10/min
+* POST `/test` and `/sync` — 5/min
+
+`429` responses carry a `Retry-After` header.
+
+---
+
+## Troubleshooting
+
+### `HTTP 403 — UCON blocked`
+
+SAP gateway's [UCON](https://help.sap.com/docs/SAP_NETWEAVER_731_BW_ABAP/280f016edb8049e998237fcbd80558e7/26257b7e9c194f7da4a8e2c80e8c4e0a.html)
+filter rejected the request. Common causes:
+
+* The Communication Arrangement does not expose the EntitySet you
+  hit (check the service whitelist on the Arrangement screen).
+* You're hitting an OData v4 endpoint on a tenant that only exposes
+  v2 catalog entries.
+* The technical user doesn't have the right PFCG role.
+
+Fix: re-open the Communication Arrangement, add the service or the
+role, save, then click **Test connection** again.
+
+### `HTTP 401 — Unauthorized`
+
+* **Basic** : the password rotated. Update via PATCH
+  `/plugins/sap/connections/{id}` with `credentials.basic_password`.
+* **OAuth** : the BTP service key was deleted or rotated. Re-create
+  it on BTP, then PATCH the four oauth fields.
+
+### `HTTP 406 — Not Acceptable` on `$metadata`
+
+You're not hitting this — the plugin sends `Accept: application/xml`
+on `$metadata` automatically. If you ever see it through a custom
+client, switch the Accept header.
+
+### `parse_error` after `Test connection`
+
+The `$metadata` response wasn't valid XML. Either the endpoint
+returned an HTML error page (login redirect, WAF block) or the
+service is misconfigured. Check the underlying response with curl:
+
+```bash
+curl -u user:pass -v https://<tenant>/sap/opu/odata/sap/API_BP/\$metadata
+```
+
+### `validator_rejected` on every agent call
+
+The agent is calling `sap_select` with a `$filter` that uses a
+function call (e.g. `contains(Name, 'Foo')`). The v1 plugin refuses
+function calls on purpose — guide the agent towards equality /
+range comparisons (`Name eq 'Foo'`, `CreationDate ge datetime'...'`).
+
+### `cost_limit_exceeded` on every call after a while
+
+The session counter is exhausted. Either the agent is in a loop
+(check the audit log for the same query repeated), or your budget
+is too low. Bump `SAP_TOOL_BUDGET_PER_SESSION` to e.g. 100 if your
+workflow legitimately needs many calls.
+
+### `403 X-Company-Id` on routes
+
+The Piilot host's `plugin_gate` middleware refused the request.
+Check that:
+
+* The Authorization header is valid.
+* The `X-Company-Id` header matches a company the user belongs to.
+* The plugin is **activated** for that company
+  (`companies_plugins.enabled = true` for `provider='sap.s4hana_cloud'`).
 
 ---
 

@@ -55,10 +55,20 @@ from piilot_pack_sap.odata_client import (
     ODataConnectionError,
     ODataHTTPError,
 )
+from piilot_pack_sap.rate_limit import limiter as rate_limiter
 
 logger = logging.getLogger("piilot_pack_sap.routes")
 
 router = APIRouter()
+
+# Rate-limit deps. The limiter itself is a module-level singleton that
+# the host shares across requests (process-local). Three buckets:
+# - read   : cheap GET endpoints (60/min).
+# - write  : CRUD POST/PATCH/DELETE (10/min).
+# - heavy  : POST /test and /sync — one $metadata fetch each (5/min).
+_RL_READ = Depends(rate_limiter.depends_read())
+_RL_WRITE = Depends(rate_limiter.depends_write())
+_RL_HEAVY = Depends(rate_limiter.depends_heavy())
 
 AuthUser = Annotated[tuple, Depends(require_user)]
 AuthBuilder = Annotated[tuple, Depends(require_builder)]
@@ -109,7 +119,7 @@ class ConnectionUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/health")
+@router.get("/health", dependencies=[_RL_READ])
 async def health(auth: AuthUser) -> dict:
     """Plugin health snapshot for the caller's company.
 
@@ -138,7 +148,7 @@ async def health(auth: AuthUser) -> dict:
 # ---------------------------------------------------------------------------
 
 
-@router.get("/connections")
+@router.get("/connections", dependencies=[_RL_READ])
 async def list_connections(
     auth: AuthUser,
     active_only: bool = Query(False),
@@ -152,7 +162,7 @@ async def list_connections(
     return {"items": [_serialize_connection(r) for r in rows]}
 
 
-@router.get("/connections/{connection_id}")
+@router.get("/connections/{connection_id}", dependencies=[_RL_READ])
 async def get_connection(
     auth: AuthUser,
     connection_id: str = Path(...),
@@ -163,7 +173,7 @@ async def get_connection(
     return _serialize_connection(row)
 
 
-@router.post("/connections", status_code=201)
+@router.post("/connections", status_code=201, dependencies=[_RL_WRITE])
 async def create_connection(
     auth: AuthBuilder,
     payload: ConnectionCreate,
@@ -207,7 +217,7 @@ async def create_connection(
     return _serialize_connection(row)
 
 
-@router.patch("/connections/{connection_id}")
+@router.patch("/connections/{connection_id}", dependencies=[_RL_WRITE])
 async def update_connection(
     auth: AuthBuilder,
     payload: ConnectionUpdate,
@@ -254,7 +264,7 @@ async def update_connection(
     return _serialize_connection(fresh)
 
 
-@router.delete("/connections/{connection_id}", status_code=204)
+@router.delete("/connections/{connection_id}", status_code=204, dependencies=[_RL_WRITE])
 async def delete_connection(
     auth: AuthAdmin,
     connection_id: str = Path(...),
@@ -281,7 +291,7 @@ async def delete_connection(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/connections/{connection_id}/test")
+@router.post("/connections/{connection_id}/test", dependencies=[_RL_HEAVY])
 async def test_connection(
     auth: AuthBuilder,
     connection_id: str = Path(...),
@@ -353,7 +363,7 @@ async def test_connection(
     }
 
 
-@router.post("/connections/{connection_id}/sync")
+@router.post("/connections/{connection_id}/sync", dependencies=[_RL_HEAVY])
 async def sync_connection(
     auth: AuthBuilder,
     connection_id: str = Path(...),
@@ -420,7 +430,7 @@ async def sync_connection(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/connections/{connection_id}/entities")
+@router.get("/connections/{connection_id}/entities", dependencies=[_RL_READ])
 async def list_entities(
     auth: AuthUser,
     connection_id: str = Path(...),
@@ -437,7 +447,10 @@ async def list_entities(
     return {"items": [_serialize_entity_summary(r) for r in rows]}
 
 
-@router.get("/connections/{connection_id}/entities/{entity_name}")
+@router.get(
+    "/connections/{connection_id}/entities/{entity_name}",
+    dependencies=[_RL_READ],
+)
 async def get_entity(
     auth: AuthUser,
     connection_id: str = Path(...),
@@ -461,7 +474,7 @@ async def get_entity(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/connections/{connection_id}/audit")
+@router.get("/connections/{connection_id}/audit", dependencies=[_RL_READ])
 async def list_connection_audit(
     auth: AuthUser,
     connection_id: str = Path(...),

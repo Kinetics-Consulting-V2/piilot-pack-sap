@@ -109,6 +109,31 @@ def _stub_sdk_http():
 
 
 @pytest.fixture(autouse=True)
+def _reset_plugin_singletons():
+    """Wipe module-level counters between tests so they don't leak state.
+
+    Phase 4 introduced two singletons that accumulate across calls:
+    - ``rate_limit.limiter`` (per-company sliding-window bucket).
+    - ``cost_guard.tracker`` (per-session SAP tool call counter).
+
+    A test that fires N tool calls would otherwise poison the next
+    test's budget. Reset before AND after for safety.
+    """
+    try:
+        from piilot_pack_sap.cost_guard import tracker as _cost_tracker
+        from piilot_pack_sap.rate_limit import limiter as _rate_limiter
+    except ImportError:
+        yield
+        return
+
+    _cost_tracker.reset()
+    _rate_limiter.reset()
+    yield
+    _cost_tracker.reset()
+    _rate_limiter.reset()
+
+
+@pytest.fixture(autouse=True)
 def _reset_sdk_registries():
     """Clear SDK-internal registries between tests so state from a prior
     test's ``Plugin.register()`` call doesn't leak into the next one."""
