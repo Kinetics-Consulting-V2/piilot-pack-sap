@@ -7,7 +7,7 @@ clock to exercise expiry behavior without real waits.
 from __future__ import annotations
 
 import asyncio
-from typing import Callable, Iterator
+from collections.abc import Iterator
 
 import httpx
 import pytest

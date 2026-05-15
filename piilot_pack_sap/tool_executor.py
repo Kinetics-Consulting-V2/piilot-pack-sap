@@ -17,19 +17,20 @@ audit + status taxonomy stay consistent across the bundle.
 from __future__ import annotations
 
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable, Optional
+from typing import Any
 
 from piilot.sdk.db import run_in_thread
 from piilot.sdk.session import get as get_session
 
 from piilot_pack_sap import audit
 from piilot_pack_sap.auth import AuthError
-from piilot_pack_sap.cost_guard import tracker as cost_tracker
 from piilot_pack_sap.connection_resolver import (
     ConnectionResolver,
     ResolutionError,
 )
+from piilot_pack_sap.cost_guard import tracker as cost_tracker
 from piilot_pack_sap.odata_client import (
     ODataClient,
     ODataConnectionError,
@@ -51,9 +52,9 @@ class ToolResult:
 
     status: str  # see ``audit.py`` status taxonomy
     data: Any = None
-    error: Optional[str] = None
-    connection_label: Optional[str] = None
-    audit_id: Optional[str] = None
+    error: str | None = None
+    connection_label: str | None = None
+    audit_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {"status": self.status}
@@ -99,9 +100,9 @@ async def execute_odata_call(
     query: ODataQuery,
     session_id: str,
     tool_id: str,
-    user_id: Optional[str] = None,
-    allowed_properties: Optional[Iterable[str]] = None,
-    resolver: Optional[ConnectionResolver] = None,
+    user_id: str | None = None,
+    allowed_properties: Iterable[str] | None = None,
+    resolver: ConnectionResolver | None = None,
 ) -> ToolResult:
     """Run the full pipeline: resolve → execute → audit → return.
 
@@ -263,10 +264,10 @@ async def execute_raw_call(
     path_after_base: str,
     session_id: str,
     tool_id: str,
-    entity_set: Optional[str] = None,
-    params: Optional[dict[str, str]] = None,
-    user_id: Optional[str] = None,
-    resolver: Optional[ConnectionResolver] = None,
+    entity_set: str | None = None,
+    params: dict[str, str] | None = None,
+    user_id: str | None = None,
+    resolver: ConnectionResolver | None = None,
 ) -> ToolResult:
     """Same pipeline as :func:`execute_odata_call` but for non-``ODataQuery``
     paths (navigation properties, function imports).
@@ -312,7 +313,8 @@ async def execute_raw_call(
             status="resolution_error", error=str(exc), audit_id=audit_id
         )
 
-    odata_url = f"{resolved.base_url}{path_after_base if path_after_base.startswith('/') else '/' + path_after_base}"
+    suffix = path_after_base if path_after_base.startswith("/") else f"/{path_after_base}"
+    odata_url = f"{resolved.base_url}{suffix}"
     client = ODataClient(
         base_url=resolved.base_url,
         auth=resolved.auth,
@@ -408,7 +410,7 @@ async def _audit_async(**kwargs: Any) -> str:
     return await run_in_thread(audit.record_call, **kwargs)
 
 
-def _count_results(payload: Any) -> Optional[int]:
+def _count_results(payload: Any) -> int | None:
     """Best-effort row count from either v2 (``d.results``) or v4 (``value``)."""
     if not isinstance(payload, dict):
         return None

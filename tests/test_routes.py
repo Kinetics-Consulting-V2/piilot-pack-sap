@@ -14,7 +14,8 @@ Strategy:
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -22,15 +23,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from piilot.sdk.http import require_admin, require_builder, require_user
 
+from piilot_pack_sap import routes as routes_module
+from piilot_pack_sap.auth import BasicAuth
 from piilot_pack_sap.connection_resolver import (
     ResolutionError,
     ResolvedConnection,
 )
-from piilot_pack_sap.auth import BasicAuth
-from piilot_pack_sap import routes as routes_module
 from piilot_pack_sap.odata_client import ODataConnectionError, ODataHTTPError
-from piilot_pack_sap.introspect import IntrospectError
-
 
 _USER = ("user-1", "user", "comp-1")
 _BUILDER = ("user-1", "builder", "comp-1")
@@ -526,7 +525,13 @@ def test_sync_connection_persists_snapshot_and_seeds_kb(
         ) as mock_persist,
         patch(
             "piilot_pack_sap.routes.kb_seeder.seed_metadata_kb",
-            return_value={"kb_id": "kb-1", "inserted": 1, "updated": 0, "total": 1, "created": True},
+            return_value={
+                "kb_id": "kb-1",
+                "inserted": 1,
+                "updated": 0,
+                "total": 1,
+                "created": True,
+            },
         ) as mock_seed,
         patch(
             "piilot_pack_sap.routes.repository.set_connection_health"

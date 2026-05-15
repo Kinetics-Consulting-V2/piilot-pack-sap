@@ -25,7 +25,7 @@ that the SAP service exposes as POST (mutations) are out of scope for v1.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.tools import StructuredTool
 from piilot.sdk.db import run_in_thread
@@ -103,7 +103,7 @@ def _quote_key(key: str) -> str:
     return f"'{escaped}'"
 
 
-def _require_admin_session(session_id: str) -> Optional[str]:
+def _require_admin_session(session_id: str) -> str | None:
     """Return None if the caller is an admin; otherwise a refusal message."""
     if not session_id:
         return "this tool requires an active session"
@@ -594,7 +594,7 @@ sap_lookup = StructuredTool.from_function(
 
 async def sap_invoke_function_fn(
     function_name: str,
-    params: Optional[dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
     session_id: str = "",
 ) -> dict[str, Any]:
     """Admin-only: invoke a SAP OData function import (read-only GET).

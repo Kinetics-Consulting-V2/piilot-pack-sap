@@ -20,8 +20,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+from collections.abc import Awaitable, Callable, Iterable
 from email.utils import parsedate_to_datetime
-from typing import Any, Awaitable, Callable, Iterable, Optional
+from typing import Any
 
 import httpx
 
@@ -105,8 +106,8 @@ class ODataClient:
         max_retries: int = DEFAULT_MAX_RETRIES,
         max_top: int = DEFAULT_MAX_TOP,
         user_agent: str = DEFAULT_USER_AGENT,
-        http_client: Optional[httpx.AsyncClient] = None,
-        sleep: Optional[Callable[[float], Awaitable[None]]] = None,
+        http_client: httpx.AsyncClient | None = None,
+        sleep: Callable[[float], Awaitable[None]] | None = None,
     ) -> None:
         if not base_url:
             raise ValueError("base_url must not be empty")
@@ -123,7 +124,7 @@ class ODataClient:
             timeout=timeout
         )
 
-    async def __aenter__(self) -> "ODataClient":
+    async def __aenter__(self) -> ODataClient:
         return self
 
     async def __aexit__(self, *_exc: Any) -> None:
@@ -141,7 +142,7 @@ class ODataClient:
         self,
         query: ODataQuery,
         *,
-        allowed_properties: Optional[Iterable[str]] = None,
+        allowed_properties: Iterable[str] | None = None,
     ) -> dict[str, Any]:
         """Validate and execute the query. Returns the parsed JSON payload.
 
@@ -186,8 +187,8 @@ class ODataClient:
         self,
         path_after_base: str,
         *,
-        params: Optional[dict[str, str]] = None,
-        accept_override: Optional[str] = None,
+        params: dict[str, str] | None = None,
+        accept_override: str | None = None,
     ) -> dict[str, Any]:
         """Execute a GET on an arbitrary path appended to ``base_url``.
 
@@ -253,7 +254,7 @@ class ODataClient:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _build_headers(self, *, accept_override: Optional[str] = None) -> dict[str, str]:
+    def _build_headers(self, *, accept_override: str | None = None) -> dict[str, str]:
         headers = {
             "Accept": accept_override or "application/json",
             "Accept-Encoding": "gzip, deflate",
@@ -269,9 +270,9 @@ class ODataClient:
         url: str,
         params: dict[str, str],
         *,
-        accept_override: Optional[str] = None,
+        accept_override: str | None = None,
     ) -> httpx.Response:
-        last_response: Optional[httpx.Response] = None
+        last_response: httpx.Response | None = None
         delay = INITIAL_RETRY_DELAY_SECONDS
 
         for attempt in range(self._max_retries + 1):
@@ -332,7 +333,7 @@ def _jitter(delay: float) -> float:
     return random.uniform(0, delay)
 
 
-def _retry_after_seconds(response: httpx.Response) -> Optional[float]:
+def _retry_after_seconds(response: httpx.Response) -> float | None:
     """Parse ``Retry-After`` header. Supports seconds or HTTP-date."""
     raw = response.headers.get("Retry-After")
     if not raw:
@@ -348,9 +349,9 @@ def _retry_after_seconds(response: httpx.Response) -> Optional[float]:
         return None
     import datetime as _dt
 
-    now = _dt.datetime.now(_dt.timezone.utc)
+    now = _dt.datetime.now(_dt.UTC)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=_dt.timezone.utc)
+        dt = dt.replace(tzinfo=_dt.UTC)
     delta = (dt - now).total_seconds()
     return max(0.0, delta)
 

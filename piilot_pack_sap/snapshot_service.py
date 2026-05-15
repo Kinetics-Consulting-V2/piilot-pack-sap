@@ -8,8 +8,6 @@ SAP only on explicit re-sync.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from piilot_pack_sap import repository
 from piilot_pack_sap.introspect import EntitySet, SchemaSnapshot
 
@@ -52,7 +50,7 @@ def _to_entry(entity_set: EntitySet) -> repository.SnapshotEntry:
     }
 
 
-def _extract_label(entity_set: EntitySet) -> Optional[str]:
+def _extract_label(entity_set: EntitySet) -> str | None:
     """Use the entity-type local name as a fallback label.
 
     SAP gateways sometimes attach ``sap:label`` on the EntitySet itself, but
@@ -66,7 +64,7 @@ def _extract_label(entity_set: EntitySet) -> Optional[str]:
     return qualified.rsplit(".", 1)[-1]
 
 
-def _extract_description(entity_set: EntitySet) -> Optional[str]:
+def _extract_description(entity_set: EntitySet) -> str | None:
     """Build a one-line description from the top SAP property labels.
 
     Used as the human-readable summary stored in

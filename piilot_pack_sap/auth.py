@@ -20,8 +20,9 @@ from __future__ import annotations
 import asyncio
 import base64
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import httpx
 
@@ -57,7 +58,7 @@ class BasicAuth:
     password: str
 
     async def apply(self, request: httpx.Request) -> None:
-        raw = f"{self.username}:{self.password}".encode("utf-8")
+        raw = f"{self.username}:{self.password}".encode()
         request.headers["Authorization"] = "Basic " + base64.b64encode(raw).decode("ascii")
 
 
@@ -88,8 +89,8 @@ class OAuthClientCredentials:
         client_id: str,
         client_secret: str,
         *,
-        scope: Optional[str] = None,
-        http_client: Optional[httpx.AsyncClient] = None,
+        scope: str | None = None,
+        http_client: httpx.AsyncClient | None = None,
         clock: Callable[[], float] = time.monotonic,
         expiry_buffer_seconds: int = 30,
     ) -> None:
@@ -105,7 +106,7 @@ class OAuthClientCredentials:
         self._clock = clock
         self._expiry_buffer = expiry_buffer_seconds
         self._lock = asyncio.Lock()
-        self._access_token: Optional[str] = None
+        self._access_token: str | None = None
         self._expires_at: float = 0.0
 
     async def apply(self, request: httpx.Request) -> None:

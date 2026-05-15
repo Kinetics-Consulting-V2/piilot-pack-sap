@@ -24,7 +24,7 @@ based on ``connections.auth_mode`` (``basic`` or ``oauth_client_credentials``).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from piilot.sdk.connectors import get_connection
 from piilot.sdk.crypto import decrypt
@@ -110,7 +110,7 @@ class ConnectionResolver:
         self,
         *,
         company_id: str,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
     ) -> ResolvedConnection:
         """Resolve the connection to use for this agent call.
 
@@ -164,7 +164,7 @@ class ConnectionResolver:
         )
 
     @staticmethod
-    def _pin_from_scope(session_id: Optional[str]) -> Optional[str]:
+    def _pin_from_scope(session_id: str | None) -> str | None:
         """Return the ``connection_id`` pinned in the session, if any."""
         if not session_id:
             return None

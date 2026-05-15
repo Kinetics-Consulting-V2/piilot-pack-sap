@@ -16,18 +16,19 @@ Strategy:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from piilot_pack_sap import tools
+from piilot_pack_sap.auth import BasicAuth
 from piilot_pack_sap.connection_resolver import (
     ResolutionError,
     ResolvedConnection,
 )
-from piilot_pack_sap.auth import BasicAuth
-from piilot_pack_sap import tools
 from piilot_pack_sap.tool_executor import ToolResult
 
 

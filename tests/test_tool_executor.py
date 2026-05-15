@@ -13,9 +13,9 @@ The pipeline is exercised end-to-end with everything mocked:
 
 from __future__ import annotations
 
-import asyncio
+from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any, Awaitable, Callable
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -33,7 +33,6 @@ from piilot_pack_sap.tool_executor import (
     execute_odata_call,
     resolve_company_id,
 )
-
 
 _BASIC_AUTH = BasicAuth(username="u", password="p")
 

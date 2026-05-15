@@ -7,7 +7,6 @@ import pytest
 from piilot_pack_sap.odata_validator import ValidationError
 from piilot_pack_sap.query_builder import ODataQuery
 
-
 BASE_V2 = "/sap/opu/odata/sap/API_BUSINESS_PARTNER"
 
 
@@ -157,8 +156,10 @@ def test_allowed_properties_propagated_to_validator() -> None:
 
 
 def test_immutable_dataclass() -> None:
+    from dataclasses import FrozenInstanceError
+
     q = ODataQuery(entity_set="A_BusinessPartner")
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         q.entity_set = "Hacked"  # type: ignore[misc]
 
 

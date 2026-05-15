@@ -21,7 +21,6 @@ from __future__ import annotations
 import asyncio
 import os
 from collections import defaultdict
-from typing import Optional
 
 
 def _read_budget_env(default: int = 30) -> int:
@@ -63,11 +62,11 @@ class SessionCostTracker:
         """Clear every counter — primarily for tests."""
         self._counts.clear()
 
-    def get(self, session_id: Optional[str]) -> int:
+    def get(self, session_id: str | None) -> int:
         return self._counts.get(self._key(session_id), 0)
 
     async def check_and_increment(
-        self, session_id: Optional[str]
+        self, session_id: str | None
     ) -> tuple[bool, int]:
         """Atomically check the budget and increment on success.
 
@@ -85,7 +84,7 @@ class SessionCostTracker:
             self._counts[key] = new_count
             return True, new_count
 
-    def _key(self, session_id: Optional[str]) -> str:
+    def _key(self, session_id: str | None) -> str:
         if not session_id:
             return self._ANONYMOUS_KEY
         return session_id

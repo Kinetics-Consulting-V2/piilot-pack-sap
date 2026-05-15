@@ -10,7 +10,6 @@ from piilot_pack_sap.odata_validator import (
     validate_request,
 )
 
-
 # ---------- HTTP method ------------------------------------------------------
 
 

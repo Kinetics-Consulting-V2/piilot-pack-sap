@@ -7,10 +7,7 @@ from pathlib import Path
 import pytest
 
 from piilot_pack_sap.introspect import (
-    EntitySet,
     IntrospectError,
-    NavigationProperty,
-    Property,
     SchemaSnapshot,
     parse_metadata,
 )
@@ -207,9 +204,11 @@ def test_find_returns_none_for_unknown_entity_set() -> None:
 
 def test_models_are_immutable() -> None:
     snap = parse_metadata(V4_FIXTURE)
+    from pydantic import ValidationError
+
     orders = snap.find("Orders")
     assert orders is not None
-    with pytest.raises(Exception):
-        # Pydantic v2 with model_config frozen=True raises ValidationError
-        # when mutating a model instance.
+    # Pydantic v2 with model_config frozen=True raises ValidationError
+    # when mutating a model instance.
+    with pytest.raises(ValidationError):
         orders.name = "Hacked"  # type: ignore[misc]

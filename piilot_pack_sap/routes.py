@@ -29,13 +29,16 @@ secrets.
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from piilot.sdk.connectors import (
     delete_connection as sdk_delete_connection,
-    get_connection as sdk_get_connection,
+)
+from piilot.sdk.connectors import (
     save_connection as sdk_save_connection,
+)
+from piilot.sdk.connectors import (
     update_config as sdk_update_config,
 )
 from piilot.sdk.db import run_in_thread
@@ -47,7 +50,7 @@ from piilot.sdk.http import (
 )
 from pydantic import BaseModel, Field
 
-from piilot_pack_sap import audit, kb_seeder, repository, snapshot_service
+from piilot_pack_sap import kb_seeder, repository, snapshot_service
 from piilot_pack_sap.connection_resolver import ConnectionResolver, ResolutionError
 from piilot_pack_sap.introspect import IntrospectError, parse_metadata
 from piilot_pack_sap.odata_client import (
@@ -91,12 +94,12 @@ class ConnectionCredentials(BaseModel):
     is routed through ``piilot.sdk.crypto.encrypt``).
     """
 
-    basic_username: Optional[str] = None
-    basic_password: Optional[str] = None
-    oauth_token_url: Optional[str] = None
-    oauth_client_id: Optional[str] = None
-    oauth_client_secret: Optional[str] = None
-    oauth_scope: Optional[str] = None
+    basic_username: str | None = None
+    basic_password: str | None = None
+    oauth_token_url: str | None = None
+    oauth_client_id: str | None = None
+    oauth_client_secret: str | None = None
+    oauth_scope: str | None = None
 
 
 class ConnectionCreate(BaseModel):
@@ -107,11 +110,11 @@ class ConnectionCreate(BaseModel):
 
 
 class ConnectionUpdate(BaseModel):
-    label: Optional[str] = Field(None, min_length=1, max_length=120)
-    base_url: Optional[str] = Field(None, min_length=8, max_length=500)
-    auth_mode: Optional[AuthMode] = None
-    is_active: Optional[bool] = None
-    credentials: Optional[ConnectionCredentials] = None
+    label: str | None = Field(None, min_length=1, max_length=120)
+    base_url: str | None = Field(None, min_length=8, max_length=500)
+    auth_mode: AuthMode | None = None
+    is_active: bool | None = None
+    credentials: ConnectionCredentials | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -479,7 +482,7 @@ async def list_connection_audit(
     auth: AuthUser,
     connection_id: str = Path(...),
     limit: int = Query(100, ge=1, le=1000),
-    status: Optional[str] = Query(None),
+    status: str | None = Query(None),
 ) -> dict:
     _, _, company_id = auth
     row = await run_in_thread(repository.get_connection_by_id, connection_id)
@@ -501,7 +504,7 @@ async def list_connection_audit(
 # ---------------------------------------------------------------------------
 
 
-def _assert_visible(row: Optional[dict], company_id: str) -> None:
+def _assert_visible(row: dict | None, company_id: str) -> None:
     """Raise 404 if the connection is missing OR belongs to another tenant.
 
     A 403 would leak the existence of the row to a member of a different
@@ -629,7 +632,7 @@ def _serialize_audit_row(row: dict) -> dict:
     }
 
 
-def _stringify(value: Any) -> Optional[str]:
+def _stringify(value: Any) -> str | None:
     if value is None:
         return None
     return str(value)

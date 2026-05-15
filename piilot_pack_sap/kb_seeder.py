@@ -19,7 +19,7 @@ the UI: rows live and die with the plugin.
 
 from __future__ import annotations
 
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from piilot.sdk.knowledge import (
     add_column,

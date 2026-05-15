@@ -21,8 +21,6 @@ in ``001_init_sap.sql``):
 
 from __future__ import annotations
 
-from typing import Optional
-
 from piilot_pack_sap import repository
 
 AuditStatus = str  # see module docstring for the allowed values.
@@ -34,15 +32,15 @@ def record_call(
     tool_id: str,
     odata_url: str,
     status: AuditStatus,
-    connection_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    session_id: Optional[str] = None,
-    entity_set: Optional[str] = None,
+    connection_id: str | None = None,
+    user_id: str | None = None,
+    session_id: str | None = None,
+    entity_set: str | None = None,
     http_method: str = "GET",
-    http_status: Optional[int] = None,
-    latency_ms: Optional[int] = None,
-    error: Optional[str] = None,
-    result_count: Optional[int] = None,
+    http_status: int | None = None,
+    latency_ms: int | None = None,
+    error: str | None = None,
+    result_count: int | None = None,
 ) -> str:
     """Append a row to ``integrations_sap.audit_log`` and return its id.
 
@@ -78,7 +76,7 @@ def record_call(
     return repository.insert_audit_log(entry)
 
 
-def _truncate_error(error: Optional[str], *, max_len: int = 2000) -> Optional[str]:
+def _truncate_error(error: str | None, *, max_len: int = 2000) -> str | None:
     """Trim long error payloads. ``2000`` chars is plenty for diagnosis and
     keeps individual audit rows small even under sustained failures."""
     if error is None:

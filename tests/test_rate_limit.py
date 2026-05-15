@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -169,8 +167,8 @@ def test_heavy_bucket_429_after_5_calls(monkeypatch, client) -> None:
         ),
     ):
         resolver = MagicMock()
-        from piilot_pack_sap.connection_resolver import ResolvedConnection
         from piilot_pack_sap.auth import BasicAuth
+        from piilot_pack_sap.connection_resolver import ResolvedConnection
 
         resolver.resolve_for_connection_id = AsyncMock(
             return_value=ResolvedConnection(

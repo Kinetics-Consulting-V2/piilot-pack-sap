@@ -16,8 +16,9 @@ instance instead of mutating.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Iterable, Literal, Optional
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Literal
 
 from piilot_pack_sap.odata_validator import (
     DEFAULT_MAX_TOP,
@@ -45,13 +46,13 @@ class ODataQuery:
 
     entity_set: str
     select: tuple[str, ...] = ()
-    filter: Optional[str] = None
+    filter: str | None = None
     order_by: tuple[tuple[str, OrderDirection], ...] = ()
-    top: Optional[int] = None
-    skip: Optional[int] = None
+    top: int | None = None
+    skip: int | None = None
     count: bool = False
-    apply: Optional[str] = None
-    format: Optional[str] = "json"
+    apply: str | None = None
+    format: str | None = "json"
 
     def build_url(
         self,
@@ -59,7 +60,7 @@ class ODataQuery:
         *,
         version: ODataVersion = "v2",
         max_top: int = DEFAULT_MAX_TOP,
-        allowed_properties: Optional[Iterable[str]] = None,
+        allowed_properties: Iterable[str] | None = None,
     ) -> tuple[str, dict[str, str]]:
         """Return ``(path, params)`` ready for an HTTP GET.
 

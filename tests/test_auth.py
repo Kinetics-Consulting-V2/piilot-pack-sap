@@ -11,12 +11,11 @@ import httpx
 import pytest
 
 from piilot_pack_sap.auth import (
-    Auth,
     ApiKeyAuth,
+    Auth,
     BasicAuth,
     OAuthClientCredentials,
 )
-
 
 # ---------- ApiKeyAuth ------------------------------------------------------
 
@@ -39,8 +38,10 @@ async def test_apikey_auth_custom_header_name() -> None:
 
 
 def test_apikey_auth_is_frozen() -> None:
+    from dataclasses import FrozenInstanceError
+
     auth = ApiKeyAuth(api_key="x")
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         auth.api_key = "y"  # type: ignore[misc]
 
 

@@ -26,8 +26,9 @@ a human-readable message. Validation is fail-closed.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Literal, Optional
+from typing import Literal
 
 ODataVersion = Literal["v2", "v4"]
 
@@ -94,7 +95,7 @@ def validate_request(
     *,
     version: ODataVersion = "v2",
     max_top: int = DEFAULT_MAX_TOP,
-    allowed_properties: Optional[Iterable[str]] = None,
+    allowed_properties: Iterable[str] | None = None,
 ) -> None:
     """Validate an OData GET request. Raises :class:`ValidationError` on first failure.
 
@@ -109,7 +110,7 @@ def validate_request(
             message=f"only GET is allowed, got {method!r}",
         )
 
-    allowed_set: Optional[frozenset[str]] = (
+    allowed_set: frozenset[str] | None = (
         frozenset(allowed_properties) if allowed_properties is not None else None
     )
 
@@ -197,7 +198,7 @@ def _validate_count(raw: str, *, version: ODataVersion) -> None:
         )
 
 
-def _validate_select(raw: str, *, allowed: Optional[frozenset[str]]) -> None:
+def _validate_select(raw: str, *, allowed: frozenset[str] | None) -> None:
     if not raw.strip():
         raise ValidationError(
             code="empty_select",
@@ -209,7 +210,7 @@ def _validate_select(raw: str, *, allowed: Optional[frozenset[str]]) -> None:
         _ensure_in_allowed(prop, allowed=allowed, where="$select")
 
 
-def _validate_orderby(raw: str, *, allowed: Optional[frozenset[str]]) -> None:
+def _validate_orderby(raw: str, *, allowed: frozenset[str] | None) -> None:
     if not raw.strip():
         raise ValidationError(
             code="empty_orderby",
@@ -240,7 +241,7 @@ _APPLY_AGG_ITEM_RE = re.compile(
 )
 
 
-def _validate_apply(raw: str, *, allowed: Optional[frozenset[str]]) -> None:
+def _validate_apply(raw: str, *, allowed: frozenset[str] | None) -> None:
     """Allow only ``aggregate(<prop> with <op> as <alias>[, ...])``.
 
     Special case: ``aggregate($count as Alias)`` is rejected — use the
@@ -350,7 +351,7 @@ class _FilterParser:
         tokens: list[_Token],
         *,
         version: ODataVersion,
-        allowed: Optional[frozenset[str]],
+        allowed: frozenset[str] | None,
     ) -> None:
         self._tokens = tokens
         self._pos = 0
@@ -371,7 +372,7 @@ class _FilterParser:
                 message=f"unexpected token {tok.value!r} at position {tok.pos}",
             )
 
-    def _peek(self) -> Optional[_Token]:
+    def _peek(self) -> _Token | None:
         if self._pos < len(self._tokens):
             return self._tokens[self._pos]
         return None
@@ -487,7 +488,7 @@ def _validate_filter(
     raw: str,
     *,
     version: ODataVersion,
-    allowed: Optional[frozenset[str]],
+    allowed: frozenset[str] | None,
 ) -> None:
     if not raw.strip():
         raise ValidationError(
@@ -513,7 +514,7 @@ def _ensure_simple_identifier(value: str, *, where: str) -> None:
 def _ensure_in_allowed(
     value: str,
     *,
-    allowed: Optional[frozenset[str]],
+    allowed: frozenset[str] | None,
     where: str,
 ) -> None:
     if allowed is None:

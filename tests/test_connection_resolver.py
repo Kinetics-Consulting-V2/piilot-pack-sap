@@ -8,7 +8,8 @@ passthrough that just runs the sync function inline.
 
 from __future__ import annotations
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import patch
 
 import pytest

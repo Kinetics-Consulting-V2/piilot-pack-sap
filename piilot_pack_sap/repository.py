@@ -17,10 +17,10 @@ Three tables are covered (see ``migrations/001_init_sap.sql`` for DDL):
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Optional, TypedDict
+from collections.abc import Iterable
+from typing import Any, TypedDict
 
 from piilot.sdk.db import Json, cursor, execute_values
-
 
 # ---------------------------------------------------------------------------
 # Connections (per-tenant SAP target)
@@ -65,7 +65,7 @@ def list_connections(
         return list(cur.fetchall())
 
 
-def get_connection_by_id(connection_id: str) -> Optional[dict[str, Any]]:
+def get_connection_by_id(connection_id: str) -> dict[str, Any] | None:
     """Fetch a single connection row by id, or ``None`` if not found."""
     with cursor() as cur:
         cur.execute(
@@ -89,7 +89,7 @@ def insert_connection(
     label: str,
     base_url: str,
     auth_mode: str,
-    plugin_connection_id: Optional[str] = None,
+    plugin_connection_id: str | None = None,
     is_active: bool = True,
 ) -> str:
     """Create a row in ``integrations_sap.connections`` and return its id.
@@ -175,7 +175,7 @@ def set_connection_health(
     *,
     connection_id: str,
     status: str,
-    error: Optional[str] = None,
+    error: str | None = None,
 ) -> bool:
     """Record the outcome of a ``POST /test`` call on a connection."""
     with cursor() as cur:
@@ -192,7 +192,7 @@ def set_connection_health(
         return cur.rowcount > 0
 
 
-def get_active_connection(company_id: str) -> Optional[dict[str, Any]]:
+def get_active_connection(company_id: str) -> dict[str, Any] | None:
     """Return the most recently updated active connection for the company.
 
     Used by :mod:`piilot_pack_sap.connection_resolver` when the agent
@@ -230,8 +230,8 @@ class SnapshotEntry(TypedDict, total=False):
     """
 
     entity_set_name: str
-    label: Optional[str]
-    description: Optional[str]
+    label: str | None
+    description: str | None
     payload: dict[str, Any]
 
 
@@ -312,7 +312,7 @@ def get_snapshot_entry(
     *,
     connection_id: str,
     entity_set_name: str,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Fetch a single snapshot row by (connection, entity_set_name)."""
     with cursor() as cur:
         cur.execute(
@@ -343,18 +343,18 @@ class AuditEntry(TypedDict, total=False):
     """
 
     company_id: str
-    connection_id: Optional[str]
-    user_id: Optional[str]
-    session_id: Optional[str]
+    connection_id: str | None
+    user_id: str | None
+    session_id: str | None
     tool_id: str
-    entity_set: Optional[str]
+    entity_set: str | None
     odata_url: str
     http_method: str
     status: str
-    http_status: Optional[int]
-    latency_ms: Optional[int]
-    error: Optional[str]
-    result_count: Optional[int]
+    http_status: int | None
+    latency_ms: int | None
+    error: str | None
+    result_count: int | None
 
 
 def insert_audit_log(entry: AuditEntry) -> str:
@@ -394,7 +394,7 @@ def list_audit_log(
     *,
     company_id: str,
     limit: int = 100,
-    status: Optional[str] = None,
+    status: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return the most recent audit rows for a company (status filter optional)."""
     params: list[Any] = [company_id]

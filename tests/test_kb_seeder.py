@@ -15,7 +15,6 @@ from piilot_pack_sap.kb_seeder import (
     seed_metadata_kb,
 )
 
-
 SIMPLE_FIXTURE = """<?xml version="1.0" encoding="utf-8"?>
 <edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
   <edmx:DataServices>
@@ -75,7 +74,7 @@ def test_first_seed_creates_kb_and_columns(snapshot) -> None:
     assert create_kwargs["schema_locked"] is True
     # All 5 columns are created in order.
     assert mock_add_col.call_count == len(KB_COLUMNS)
-    for call, expected in zip(mock_add_col.call_args_list, KB_COLUMNS):
+    for call, expected in zip(mock_add_col.call_args_list, KB_COLUMNS, strict=True):
         assert call.args[0] == "kb-1"
         assert call.kwargs["name"] == expected["name"]
         assert call.kwargs["column_type"] == expected["column_type"]
@@ -168,7 +167,7 @@ def test_resync_inserts_brand_new_entity_sets() -> None:
             "piilot_pack_sap.kb_seeder.insert_batch",
             return_value=[{"id": "new-row"}],
         ) as mock_insert,
-        patch("piilot_pack_sap.kb_seeder.update_row") as mock_update,
+        patch("piilot_pack_sap.kb_seeder.update_row"),
     ):
         result = seed_metadata_kb(
             company_id="comp-1",

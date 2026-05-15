@@ -26,7 +26,7 @@ import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
 from time import monotonic
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import Depends, HTTPException
 from piilot.sdk.http import require_user
@@ -52,7 +52,7 @@ class RateLimiter:
     bucket store is process-local; reset on plugin reload.
     """
 
-    def __init__(self, limits: Optional[Limits] = None) -> None:
+    def __init__(self, limits: Limits | None = None) -> None:
         self._limits = limits or DEFAULT_LIMITS
         self._lock = asyncio.Lock()
         self._buckets: dict[tuple[str, str], list[float]] = defaultdict(list)

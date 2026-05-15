@@ -4,11 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import pytest
-
 from piilot_pack_sap.introspect import parse_metadata
 from piilot_pack_sap.snapshot_service import persist_schema_snapshot
-
 
 V4_FIXTURE = """<?xml version="1.0" encoding="utf-8"?>
 <edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">

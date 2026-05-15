@@ -13,7 +13,7 @@ hardening regardless.
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 from xml.etree.ElementTree import Element
 
 import defusedxml.ElementTree as DET
@@ -39,26 +39,26 @@ class Property(BaseModel):
     name: str
     type: str
     nullable: bool = True
-    max_length: Optional[int] = None
-    precision: Optional[int] = None
-    scale: Optional[int] = None
-    sap_label: Optional[str] = None
+    max_length: int | None = None
+    precision: int | None = None
+    scale: int | None = None
+    sap_label: str | None = None
     sap_filterable: bool = True
     sap_sortable: bool = True
     sap_creatable: bool = True
     sap_updatable: bool = True
-    sap_semantics: Optional[str] = None
+    sap_semantics: str | None = None
 
 
 class NavigationProperty(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     name: str
-    target_entity_type: Optional[str] = None
-    multiplicity: Optional[Multiplicity] = None
-    relationship: Optional[str] = None
-    from_role: Optional[str] = None
-    to_role: Optional[str] = None
+    target_entity_type: str | None = None
+    multiplicity: Multiplicity | None = None
+    relationship: str | None = None
+    from_role: str | None = None
+    to_role: str | None = None
 
 
 class EntitySet(BaseModel):
@@ -78,7 +78,7 @@ class SchemaSnapshot(BaseModel):
     namespace: str
     entity_sets: tuple[EntitySet, ...] = ()
 
-    def find(self, entity_set_name: str) -> Optional[EntitySet]:
+    def find(self, entity_set_name: str) -> EntitySet | None:
         for es in self.entity_sets:
             if es.name == entity_set_name:
                 return es
@@ -123,7 +123,7 @@ def _detect_version(root_tag: str) -> tuple[ODataVersion, str]:
     )
 
 
-def _find_first(root: Element, edm_ns: str, local_name: str) -> Optional[Element]:
+def _find_first(root: Element, edm_ns: str, local_name: str) -> Element | None:
     for elem in root.iter(f"{{{edm_ns}}}{local_name}"):
         return elem
     return None
@@ -242,7 +242,7 @@ def _bool_sap_attr(elem: Element, local: str, *, default: bool) -> bool:
     return raw.strip().lower() == "true"
 
 
-def _int_attr(elem: Element, attr: str) -> Optional[int]:
+def _int_attr(elem: Element, attr: str) -> int | None:
     raw = elem.get(attr)
     if raw is None:
         return None
