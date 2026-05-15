@@ -86,9 +86,10 @@ export default function ConnectionPanel({
         setError(null)
         try {
             const data = await listConnections()
-            setItems(data.items)
-            if (data.items.length === 1 && !selectedConnectionId) {
-                onSelectConnection(data.items[0].id)
+            const list = data?.items ?? []
+            setItems(list)
+            if (list.length === 1 && !selectedConnectionId) {
+                onSelectConnection(list[0].id)
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err))

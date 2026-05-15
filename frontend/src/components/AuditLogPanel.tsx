@@ -89,7 +89,7 @@ export default function AuditLogPanel({ connectionId }: Props) {
                 limit: 100,
                 status: statusFilter || undefined,
             })
-            setItems(data.items)
+            setItems(data?.items ?? [])
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err))
         } finally {

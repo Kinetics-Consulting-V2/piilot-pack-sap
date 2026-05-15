@@ -14,6 +14,27 @@ plugin follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## Frontend [0.1.1] — 2026-05-15 — Defensive guards on API responses
+
+### Fixed
+
+- **`ConnectionPanel.tsx`** — `data.items.length` blew up when
+  `listConnections()` returned an unexpected shape (e.g. before
+  the plugin was activated for the company, or when the host's
+  ``apiFetch`` resolved with an empty body on a redirect / 404
+  intermediate state). Same crash pattern in **`StatusPanel.tsx`**,
+  **`EntityBrowser.tsx`**, **`AuditLogPanel.tsx`** — every panel
+  now reads ``data?.items ?? []`` before touching ``.length``.
+  Symptom on prod: white-screen on first open of the module with
+  ``Uncaught TypeError: Cannot read properties of undefined
+  (reading 'length')``.
+
+### Compat
+
+- No backend change. `piilot-pack-sap` Python package stays at
+  `0.1.1`.
+- npm package bumped to `0.1.1`. Host bumps to `^0.1.1`.
+
 ## [0.1.1] — 2026-05-15 — Migration hot-fix
 
 ### Fixed

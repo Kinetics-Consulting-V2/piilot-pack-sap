@@ -1,6 +1,6 @@
 {
   "name": "piilot-pack-sap-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SAP S/4HANA Cloud OData connector — frontend contributions (SAPConnectorView with 4 tabs: Connection / Status / Browser / Audit) for Piilot core.",
   "license": "Apache-2.0",
   "author": "Kinetics Consulting V2 <contact@piilot.ai>",

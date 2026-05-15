@@ -64,7 +64,7 @@ export default function EntityBrowser({ connectionId }: Props) {
         setError(null)
         try {
             const data = await listEntities(connectionId, { limit: 10_000 })
-            setItems(data.items)
+            setItems(data?.items ?? [])
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err))
         } finally {
