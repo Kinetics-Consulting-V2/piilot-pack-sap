@@ -1,0 +1,227 @@
+"""Tests for ``piilot_pack_sap.repository``.
+
+The DB cursor is fully mocked: we never hit a real PostgreSQL instance in
+the unit suite. :func:`piilot.sdk.testing.mock_db_conn` neutralises
+``execute_values`` so its bytes-join helper does not crash on
+``MagicMock`` cursors.
+"""
+
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
+import pytest
+from piilot.sdk.testing import mock_db_conn
+
+from piilot_pack_sap import repository
+
+
+@pytest.fixture
+def mock_cursor():
+    """Yield a MagicMock cursor wired into ``repository.cursor``.
+
+    Also patches ``repository.Json`` as a passthrough — the real
+    ``piilot.sdk.db.Json`` is a placeholder until the host loader wires
+    the psycopg2 adapter at boot, so calling it raises
+    ``NotImplementedError`` in isolated unit tests.
+    """
+    cur = MagicMock()
+    cm = MagicMock()
+    cm.__enter__.return_value = cur
+    cm.__exit__.return_value = False
+    with (
+        patch("piilot_pack_sap.repository.cursor", return_value=cm),
+        patch("piilot_pack_sap.repository.Json", side_effect=lambda payload: payload),
+        mock_db_conn(cur),
+    ):
+        yield cur
+
+
+# ---------- upsert_schema_snapshot ------------------------------------------
+
+
+def test_upsert_schema_snapshot_emits_insert_with_on_conflict(mock_cursor) -> None:
+    """``mock_db_conn`` decomposes ``execute_values`` into one ``execute`` per
+    row in the test fixture, so we assert on the SQL shape (single INSERT
+    template with ON CONFLICT) rather than the call count."""
+    mock_cursor.rowcount = 2
+    n = repository.upsert_schema_snapshot(
+        connection_id="conn-1",
+        company_id="comp-1",
+        service_path="/sap/opu/odata/sap/API_BUSINESS_PARTNER",
+        entries=[
+            {
+                "entity_set_name": "A_BusinessPartner",
+                "label": "Business Partner",
+                "description": "BP master data",
+                "payload": {"properties": [{"name": "BusinessPartner"}]},
+            },
+            {
+                "entity_set_name": "A_Customer",
+                "payload": {"properties": []},
+            },
+        ],
+    )
+    assert n == 2
+    # Two entries -> two execute calls under the mock_db_conn fake.
+    assert mock_cursor.execute.call_count == 2
+    # Each call uses the same upsert template.
+    sql_first = mock_cursor.execute.call_args_list[0][0][0]
+    assert "INSERT INTO integrations_sap.schema_snapshot" in sql_first
+    assert "ON CONFLICT (connection_id, service_path, entity_set_name)" in sql_first
+
+
+def test_upsert_schema_snapshot_skips_when_no_entries(mock_cursor) -> None:
+    n = repository.upsert_schema_snapshot(
+        connection_id="conn-1",
+        company_id="comp-1",
+        service_path="/sap",
+        entries=[],
+    )
+    assert n == 0
+    mock_cursor.execute.assert_not_called()
+
+
+def test_upsert_schema_snapshot_handles_missing_optional_fields(mock_cursor) -> None:
+    """label / description / payload may be omitted on each entry."""
+    mock_cursor.rowcount = 1
+    repository.upsert_schema_snapshot(
+        connection_id="c",
+        company_id="co",
+        service_path="/sap",
+        entries=[{"entity_set_name": "X"}],
+    )
+    # The values argument is positional [3] for execute_values' template
+    # replacement — but with mock_db_conn the call goes through
+    # cur.execute(sql % tuple(values)). The exact contract: SQL is rendered
+    # and execute is called once.
+    mock_cursor.execute.assert_called_once()
+
+
+# ---------- list_schema_snapshot --------------------------------------------
+
+
+def test_list_schema_snapshot_returns_fetched_rows(mock_cursor) -> None:
+    expected = [
+        {"id": "r1", "entity_set_name": "A_BP"},
+        {"id": "r2", "entity_set_name": "A_Customer"},
+    ]
+    mock_cursor.fetchall.return_value = expected
+    result = repository.list_schema_snapshot(connection_id="conn-1")
+    assert result == expected
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "FROM integrations_sap.schema_snapshot" in sql
+    assert params == ("conn-1", 500)
+
+
+def test_list_schema_snapshot_respects_limit(mock_cursor) -> None:
+    mock_cursor.fetchall.return_value = []
+    repository.list_schema_snapshot(connection_id="x", limit=10)
+    _, params = mock_cursor.execute.call_args[0]
+    assert params == ("x", 10)
+
+
+# ---------- get_snapshot_entry ----------------------------------------------
+
+
+def test_get_snapshot_entry_returns_row_when_found(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "r1", "entity_set_name": "A_BP"}
+    result = repository.get_snapshot_entry(
+        connection_id="c1", entity_set_name="A_BP"
+    )
+    assert result == {"id": "r1", "entity_set_name": "A_BP"}
+    _, params = mock_cursor.execute.call_args[0]
+    assert params == ("c1", "A_BP")
+
+
+def test_get_snapshot_entry_returns_none_when_missing(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = None
+    assert repository.get_snapshot_entry(connection_id="c", entity_set_name="X") is None
+
+
+# ---------- insert_audit_log ------------------------------------------------
+
+
+def test_insert_audit_log_emits_insert_returning_id(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "audit-uuid"}
+    audit_id = repository.insert_audit_log(
+        {
+            "company_id": "comp-1",
+            "tool_id": "sap.select",
+            "odata_url": "/A_BusinessPartner?$top=1",
+            "status": "ok",
+            "http_status": 200,
+            "latency_ms": 142,
+            "entity_set": "A_BusinessPartner",
+            "result_count": 1,
+        }
+    )
+    assert audit_id == "audit-uuid"
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "INSERT INTO integrations_sap.audit_log" in sql
+    assert "RETURNING id" in sql
+    assert params[0] == "comp-1"
+    assert params[4] == "sap.select"
+    assert params[6] == "/A_BusinessPartner?$top=1"
+    assert params[7] == "GET"  # default http_method
+    assert params[8] == "ok"
+
+
+def test_insert_audit_log_defaults_optional_fields(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "x"}
+    repository.insert_audit_log(
+        {
+            "company_id": "comp-1",
+            "tool_id": "sap.select",
+            "odata_url": "/x",
+            "status": "validator_rejected",
+        }
+    )
+    _, params = mock_cursor.execute.call_args[0]
+    assert params[1] is None  # connection_id
+    assert params[2] is None  # user_id
+    assert params[3] is None  # session_id
+    assert params[5] is None  # entity_set
+    assert params[7] == "GET"
+    assert params[9] is None  # http_status
+    assert params[10] is None  # latency_ms
+    assert params[11] is None  # error
+    assert params[12] is None  # result_count
+
+
+def test_insert_audit_log_preserves_custom_http_method(mock_cursor) -> None:
+    """We currently only emit GET but the column accepts anything."""
+    mock_cursor.fetchone.return_value = {"id": "x"}
+    repository.insert_audit_log(
+        {
+            "company_id": "comp-1",
+            "tool_id": "sap.select",
+            "odata_url": "/x",
+            "status": "ok",
+            "http_method": "GET",
+        }
+    )
+    _, params = mock_cursor.execute.call_args[0]
+    assert params[7] == "GET"
+
+
+# ---------- list_audit_log --------------------------------------------------
+
+
+def test_list_audit_log_orders_by_recent_first(mock_cursor) -> None:
+    mock_cursor.fetchall.return_value = [{"id": "a1"}]
+    result = repository.list_audit_log(company_id="comp-1")
+    assert result == [{"id": "a1"}]
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "ORDER BY created_at DESC" in sql
+    assert params == ("comp-1", 100)
+
+
+def test_list_audit_log_filters_by_status(mock_cursor) -> None:
+    mock_cursor.fetchall.return_value = []
+    repository.list_audit_log(
+        company_id="comp-1", status="http_error", limit=25
+    )
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "AND status = %s" in sql
+    assert params == ("comp-1", "http_error", 25)

@@ -14,6 +14,56 @@ plugin follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 1 Bloc C (persistence + audit + KB seeding)
+
+- **`piilot_pack_sap/repository.py`** — direct SQL access to the three
+  `integrations_sap` tables created by `001_init_sap.sql`. Wraps
+  `piilot.sdk.db.cursor` (sync — async handlers must call through
+  `run_in_thread`). API: `upsert_schema_snapshot` (`execute_values` +
+  ON CONFLICT on `(connection_id, service_path, entity_set_name)`),
+  `list_schema_snapshot`, `get_snapshot_entry`, `insert_audit_log`
+  (returns id), `list_audit_log` (optional status filter).
+- **`piilot_pack_sap/snapshot_service.py`** — bridges the
+  `introspect.SchemaSnapshot` type with the repo. `persist_schema_snapshot`
+  converts each `EntitySet` into a row with a JSONB payload (full
+  serialised properties + navigations + SAP annotations) so downstream
+  agent tools can `sap_describe_entity` without re-parsing XML.
+  Derives a human description from the first `sap:label` annotations.
+- **`piilot_pack_sap/audit.py`** — `record_call` primitive used by every
+  agent tool (Phase 2) and HTTP route (Phase 3) to append to
+  `integrations_sap.audit_log`. Documents the status taxonomy
+  (`ok` | `validator_rejected` | `auth_error` | `http_error` |
+  `parse_error` | `rate_limited` | `timeout`). Truncates `error`
+  payloads to 2 000 chars to keep audit rows small.
+- **`piilot_pack_sap/kb_seeder.py`** — auto-creates the plugin-owned
+  KB "SAP Metadata — <connection_label>" on the first sync via
+  `piilot.sdk.knowledge.create_kb` + `add_column` + `insert_batch`
+  (schema_locked, 5 columns: entity_set_name / entity_type /
+  description / key_fields / properties_count). Re-sync = diff
+  against existing rows via `find_rows`, `update_row` for known
+  entity sets, `insert_batch` for new ones. The `description` column
+  is text-rich (sap:label + first 15 properties + key) for the host's
+  auto-embedder so the RAG agent (`sap_search_entity`, Phase 2) gets
+  semantic signal out of the box.
+- **`tests/test_repository.py`** + **`test_snapshot_service.py`** +
+  **`test_audit.py`** + **`test_kb_seeder.py`** — 35 unit tests
+  covering 100% of `repository`, `audit`, `kb_seeder` and 96% of
+  `snapshot_service`. SDK primitives (`cursor`, `Json`, `find_kb`,
+  `create_kb`, `add_column`, `find_rows`, `insert_batch`,
+  `update_row`) are mocked; `piilot.sdk.testing.mock_db_conn`
+  neutralises `execute_values` for the upsert path.
+
+Coverage globale Phase 1 (Blocs A + B + C) : 259 unit + 5 live = 264 tests
+verts, **96% coverage** sur tout le package.
+
+### Decided
+
+- **No `register_kb_template`.** The v0.7 SDK primitive declares a
+  blueprint exposed in the user-facing template catalogue. Our plugin
+  auto-creates a single KB per connection from `kb_seeder` directly —
+  the user never picks "SAP Metadata" from the catalogue, so the
+  template would just be visual noise.
+
 ### Added — Phase 1 Bloc B (network + auth + sandbox round-trip)
 
 - **`piilot_pack_sap/auth.py`** — three pluggable async auth strategies
