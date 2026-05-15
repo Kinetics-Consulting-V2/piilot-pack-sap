@@ -23,6 +23,91 @@ from piilot.sdk.db import Json, cursor, execute_values
 
 
 # ---------------------------------------------------------------------------
+# Connections (per-tenant SAP target)
+# ---------------------------------------------------------------------------
+
+
+def list_connections(
+    *,
+    company_id: str,
+    active_only: bool = True,
+) -> list[dict[str, Any]]:
+    """Return SAP connections belonging to the tenant, ordered by recency."""
+    with cursor() as cur:
+        if active_only:
+            cur.execute(
+                """
+                SELECT
+                    id, company_id, plugin_connection_id, label, base_url,
+                    auth_mode, is_active, last_health_check_at,
+                    last_health_status, last_health_error, created_at,
+                    updated_at
+                FROM integrations_sap.connections
+                WHERE company_id = %s AND is_active = TRUE
+                ORDER BY updated_at DESC
+                """,
+                (company_id,),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT
+                    id, company_id, plugin_connection_id, label, base_url,
+                    auth_mode, is_active, last_health_check_at,
+                    last_health_status, last_health_error, created_at,
+                    updated_at
+                FROM integrations_sap.connections
+                WHERE company_id = %s
+                ORDER BY updated_at DESC
+                """,
+                (company_id,),
+            )
+        return list(cur.fetchall())
+
+
+def get_connection_by_id(connection_id: str) -> Optional[dict[str, Any]]:
+    """Fetch a single connection row by id, or ``None`` if not found."""
+    with cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                id, company_id, plugin_connection_id, label, base_url,
+                auth_mode, is_active, last_health_check_at,
+                last_health_status, last_health_error, created_at, updated_at
+            FROM integrations_sap.connections
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (connection_id,),
+        )
+        return cur.fetchone()
+
+
+def get_active_connection(company_id: str) -> Optional[dict[str, Any]]:
+    """Return the most recently updated active connection for the company.
+
+    Used by :mod:`piilot_pack_sap.connection_resolver` when the agent
+    session doesn't pin an explicit ``connection_id`` via
+    ``piilot.sdk.session.set_scope``.
+    """
+    with cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                id, company_id, plugin_connection_id, label, base_url,
+                auth_mode, is_active, last_health_check_at,
+                last_health_status, last_health_error, created_at, updated_at
+            FROM integrations_sap.connections
+            WHERE company_id = %s AND is_active = TRUE
+            ORDER BY updated_at DESC
+            LIMIT 1
+            """,
+            (company_id,),
+        )
+        return cur.fetchone()
+
+
+# ---------------------------------------------------------------------------
 # Schema-snapshot rows
 # ---------------------------------------------------------------------------
 
@@ -229,9 +314,12 @@ def list_audit_log(
 __all__ = [
     "AuditEntry",
     "SnapshotEntry",
+    "get_active_connection",
+    "get_connection_by_id",
     "get_snapshot_entry",
     "insert_audit_log",
     "list_audit_log",
+    "list_connections",
     "list_schema_snapshot",
     "upsert_schema_snapshot",
 ]

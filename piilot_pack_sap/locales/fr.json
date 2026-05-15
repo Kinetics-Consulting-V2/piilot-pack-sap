@@ -28,6 +28,44 @@
         "browser": "Explorateur",
         "audit": "Audit"
       }
+    },
+    "tools": {
+      "describe_entity": {
+        "label": "SAP — Décrire une entité",
+        "description": "Retourne la définition mise en cache d'une EntitySet SAP (propriétés, types, navigations). À appeler avant sap_select / sap_aggregate."
+      },
+      "search_entity": {
+        "label": "SAP — Rechercher une entité",
+        "description": "Recherche une EntitySet par sous-chaîne dans le catalogue mis en cache. Utile quand le nom exact n'est pas connu."
+      },
+      "select": {
+        "label": "SAP — Sélection OData",
+        "description": "Exécute un GET OData filtré et projeté ($filter / $select / $orderby / $top) sur une EntitySet."
+      },
+      "count": {
+        "label": "SAP — Compter",
+        "description": "Retourne le nombre de lignes d'une EntitySet (avec un $filter optionnel)."
+      },
+      "top_n": {
+        "label": "SAP — Top N",
+        "description": "Retourne les N premières lignes d'une EntitySet selon un tri donné. Wrapper pratique autour de $top + $orderby."
+      },
+      "aggregate": {
+        "label": "SAP — Agrégation",
+        "description": "Calcule des agrégats (sum / avg / min / max / count / countdistinct) sur une EntitySet via $apply=aggregate(...)."
+      },
+      "navigate": {
+        "label": "SAP — Suivre une navigation",
+        "description": "Suit une propriété de navigation depuis un enregistrement unique (ex : adresses d'un Business Partner)."
+      },
+      "lookup": {
+        "label": "SAP — Lookup admin",
+        "description": "Admin uniquement. Récupère un enregistrement SAP par clé primaire avec accès aux champs techniques."
+      },
+      "invoke_function": {
+        "label": "SAP — Appel de function import",
+        "description": "Admin uniquement. Invoque une fonction OData (lecture seule)."
+      }
     }
   }
 }

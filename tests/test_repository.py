@@ -205,6 +205,58 @@ def test_insert_audit_log_preserves_custom_http_method(mock_cursor) -> None:
     assert params[7] == "GET"
 
 
+# ---------- list_connections / get_connection_by_id / get_active_connection
+
+
+def test_list_connections_filters_active_by_default(mock_cursor) -> None:
+    mock_cursor.fetchall.return_value = [
+        {"id": "c1", "label": "Sandbox", "is_active": True},
+        {"id": "c2", "label": "Prod", "is_active": True},
+    ]
+    rows = repository.list_connections(company_id="comp-1")
+    assert len(rows) == 2
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "is_active = TRUE" in sql
+    assert "ORDER BY updated_at DESC" in sql
+    assert params == ("comp-1",)
+
+
+def test_list_connections_includes_inactive_when_requested(mock_cursor) -> None:
+    mock_cursor.fetchall.return_value = []
+    repository.list_connections(company_id="comp-1", active_only=False)
+    sql, _ = mock_cursor.execute.call_args[0]
+    assert "is_active = TRUE" not in sql
+
+
+def test_get_connection_by_id_returns_row_when_found(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "c1", "label": "Sandbox"}
+    row = repository.get_connection_by_id("c1")
+    assert row == {"id": "c1", "label": "Sandbox"}
+    _, params = mock_cursor.execute.call_args[0]
+    assert params == ("c1",)
+
+
+def test_get_connection_by_id_returns_none_when_missing(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = None
+    assert repository.get_connection_by_id("missing") is None
+
+
+def test_get_active_connection_returns_most_recent_active(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = {"id": "c1", "is_active": True}
+    row = repository.get_active_connection("comp-1")
+    assert row["id"] == "c1"
+    sql, params = mock_cursor.execute.call_args[0]
+    assert "is_active = TRUE" in sql
+    assert "ORDER BY updated_at DESC" in sql
+    assert "LIMIT 1" in sql
+    assert params == ("comp-1",)
+
+
+def test_get_active_connection_returns_none_when_no_match(mock_cursor) -> None:
+    mock_cursor.fetchone.return_value = None
+    assert repository.get_active_connection("comp-1") is None
+
+
 # ---------- list_audit_log --------------------------------------------------
 
 

@@ -28,6 +28,44 @@
         "browser": "Browser",
         "audit": "Audit"
       }
+    },
+    "tools": {
+      "describe_entity": {
+        "label": "SAP — Describe entity",
+        "description": "Return the cached definition of a SAP EntitySet (properties, types, navigations). Call this before sap_select / sap_aggregate."
+      },
+      "search_entity": {
+        "label": "SAP — Search entity",
+        "description": "Substring-search the cached EntitySet catalogue. Useful when the exact name is unknown."
+      },
+      "select": {
+        "label": "SAP — OData select",
+        "description": "Run a filtered and projected OData GET ($filter / $select / $orderby / $top) on an EntitySet."
+      },
+      "count": {
+        "label": "SAP — Count",
+        "description": "Return the row count of an EntitySet (with optional $filter)."
+      },
+      "top_n": {
+        "label": "SAP — Top N",
+        "description": "Return the top N rows of an EntitySet ordered by a given property. Thin wrapper around $top + $orderby."
+      },
+      "aggregate": {
+        "label": "SAP — Aggregate",
+        "description": "Compute aggregates (sum / avg / min / max / count / countdistinct) over an EntitySet via $apply=aggregate(...)."
+      },
+      "navigate": {
+        "label": "SAP — Follow navigation",
+        "description": "Follow a Navigation Property from a single record (e.g. all addresses of a Business Partner)."
+      },
+      "lookup": {
+        "label": "SAP — Admin lookup",
+        "description": "Admin only. Fetch a SAP record by primary key with access to technical fields."
+      },
+      "invoke_function": {
+        "label": "SAP — Invoke function import",
+        "description": "Admin only. Invoke a SAP OData function import (read-only)."
+      }
     }
   }
 }

@@ -14,6 +14,84 @@ plugin follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 2 (9 agent tools + connection resolver + executor)
+
+- **`piilot_pack_sap/connection_resolver.py`** — async resolver that
+  decides which SAP connection an agent call should hit. Lookup order:
+  (1) ``piilot.sdk.session.get_scope`` if the user pinned a connection
+  for this run, (2) most-recently-updated active row in
+  ``integrations_sap.connections``. Loads encrypted credentials from
+  the core via ``piilot.sdk.connectors.get_connection`` +
+  ``piilot.sdk.crypto.decrypt`` and builds the right
+  :class:`~piilot_pack_sap.auth.Auth` (Basic or
+  OAuthClientCredentials). Plugin namespace check on the scope (a SAP
+  tool cannot inherit another plugin's pinned connection).
+- **`piilot_pack_sap/tool_executor.py`** — single pipeline shared by
+  every tool: resolve company_id from the session state, resolve the
+  connection, build :class:`ODataClient`, run the query, append an
+  audit row, return a typed ``ToolResult``. Two surfaces:
+  ``execute_odata_call`` for :class:`ODataQuery`-shaped requests and
+  ``execute_raw_call`` for paths that don't fit the composer
+  (navigation properties, function imports). Maps every exception to
+  the audit status taxonomy: ``ok`` / ``session_unknown`` /
+  ``resolution_error`` / ``validator_rejected`` / ``auth_error`` /
+  ``http_error`` / ``rate_limited`` / ``timeout`` / ``parse_error``.
+  Tools never raise — they always return a structured dict so the LLM
+  can react gracefully.
+- **9 agent tools (`piilot_pack_sap/tools.py`)** — every tool is an
+  async function wrapped with ``piilot.sdk.tools.bind_session`` so
+  ``session_id`` is stripped from the LLM-facing JSON schema (mandatory
+  pattern since SDK 0.6).
+  - ``sap_describe_entity(entity_set)`` — reads
+    ``integrations_sap.schema_snapshot``, no live OData call.
+  - ``sap_search_entity(query, limit)`` — case-insensitive substring
+    search over cached EntitySet names + descriptions.
+  - ``sap_select(entity_set, filter, select, order_by, top)`` — full
+    OData GET with whitelist validation.
+  - ``sap_count(entity_set, filter)`` — row count (v2 path-segment
+    ``/$count``, v4 inline ``$count=true``).
+  - ``sap_top_n(entity_set, n, order_by, filter, select)`` — thin
+    wrapper around ``$top`` + ``$orderby``.
+  - ``sap_aggregate(entity_set, aggregation, filter)`` — ``$apply=
+    aggregate(...)`` with allowed ops ``sum / avg / min / max / count
+    / countdistinct``.
+  - ``sap_navigate(entity_set, key, navigation_property, top)`` —
+    follow a Navigation Property from a single record. Key is
+    OData-escaped (single quotes doubled) before path embedding.
+  - ``sap_lookup(entity_set, key, select)`` — **admin only**. Single
+    record by primary key. Refused for non-admin sessions.
+  - ``sap_invoke_function(function_name, params)`` — **admin only**.
+    Read-only OData function imports. Rejects unsupported param types
+    (lists, dicts) and non-identifier function names.
+- **Manifest** (``pyproject.toml``) — 9 ``[[provides.agent_tools]]``
+  entries, each ``requires = "connectors.sap.s4hana_cloud"`` so the
+  Builder hides the bundle when the connector isn't configured. Admin
+  enforcement is documented as a comment but happens at runtime
+  inside the tool function (the manifest layer has no role gating
+  primitive in SDK 0.7).
+- **i18n** — 18 new keys under ``sap.tools.<tool>.{label, description}``
+  in both ``fr.json`` and ``en.json``. Zero hardcoded strings in the
+  agent tool layer.
+- **`piilot_pack_sap/repository.py` extensions** — three new
+  functions consumed by the resolver: ``list_connections``,
+  ``get_connection_by_id``, ``get_active_connection``.
+- **`piilot_pack_sap/odata_client.py` extension** — new
+  ``ODataClient.request_raw(path_after_base, params=...)`` for paths
+  outside the ``ODataQuery`` shape. Bypasses the validator (caller is
+  responsible for path safety — only used by tool functions that have
+  already screened identifiers).
+- **Tests** — 5 new test files, 118 unit tests added on top of Phase 1.
+  Mocking pattern: SDK primitives (``get_session``, ``get_scope``,
+  ``get_connection``, ``decrypt``, ``run_in_thread``) are patched per
+  fixture; the test never touches a DB or makes a real HTTP call.
+  Tools tests verify (a) the right ``ODataQuery`` is built, (b) the
+  validator refusal is surfaced as ``status=validator_rejected``, (c)
+  admin gates fail closed for non-admin roles, (d) ``session_id`` is
+  stripped from every tool's LLM-facing JSON schema.
+
+Coverage globale (Phases 0 + 1 + 2) : 336 unit + 5 live = 341 tests
+verts, **95% coverage** sur tout le package.
+
 ### Added — Phase 1 Bloc C (persistence + audit + KB seeding)
 
 - **`piilot_pack_sap/repository.py`** — direct SQL access to the three

@@ -115,10 +115,65 @@ required = false
 label_key = "sap.connectors.s4hana_cloud.oauth_scope.label"
 
 # --- Agent tools ---
-# 9 OData tools — registered programmatically in tools.py (Phase 2).
-# Declared here for audit / discovery purposes only. The runtime
-# registry is populated by the register_tool() calls.
-# Phase 2 will populate this section.
+# 9 OData tools shipped in Phase 2 — registered programmatically in
+# tools.py via register_tool(). Declared here for audit / discovery /
+# UI catalogue purposes. Every tool requires the SAP S/4HANA Cloud
+# connector (hidden when not configured).
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.describe_entity"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.describe_entity.label"
+description_key = "sap.tools.describe_entity.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.search_entity"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.search_entity.label"
+description_key = "sap.tools.search_entity.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.select"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.select.label"
+description_key = "sap.tools.select.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.count"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.count.label"
+description_key = "sap.tools.count.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.top_n"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.top_n.label"
+description_key = "sap.tools.top_n.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.aggregate"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.aggregate.label"
+description_key = "sap.tools.aggregate.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.navigate"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.navigate.label"
+description_key = "sap.tools.navigate.description"
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.lookup"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.lookup.label"
+description_key = "sap.tools.lookup.description"
+# Admin-only at runtime — enforced by sap_lookup_fn._require_admin_session.
+
+[[tool.piilot.plugin.provides.agent_tools]]
+id = "sap.invoke_function"
+requires = "connectors.sap.s4hana_cloud"
+label_key = "sap.tools.invoke_function.label"
+description_key = "sap.tools.invoke_function.description"
+# Admin-only at runtime — read-only function imports only (no mutations).
 
 # --- Permissions (audit declaration) ---
 [tool.piilot.plugin.permissions]

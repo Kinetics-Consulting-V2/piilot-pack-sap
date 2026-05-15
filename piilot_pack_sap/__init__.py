@@ -4,8 +4,8 @@ Entry point of the plugin. The ``Plugin`` class is referenced by
 ``[project.entry-points."piilot.plugins"]`` in ``pyproject.toml`` and
 instantiated once at Piilot backend startup.
 
-What this plugin provides (v0.1.0 — Phase 0 scaffolding)
---------------------------------------------------------
+What this plugin provides (v0.1.0 — Phases 0 + 1 + 2 shipped)
+-------------------------------------------------------------
 
 * **1 module Piilot** ``sap.connector`` — single ModuleView that carries
   the whole plugin UX (connection config, status, entity browser, audit
@@ -13,24 +13,27 @@ What this plugin provides (v0.1.0 — Phase 0 scaffolding)
   ``piilot-pack-supabase``.
 
 * **1 connector** ``sap.s4hana_cloud`` — Basic auth + OAuth 2.0
-  ``client_credentials`` against a SAP S/4HANA Cloud OData v4 endpoint.
+  ``client_credentials`` against a SAP S/4HANA Cloud OData v2 / v4
+  endpoint (auto-detected from ``$metadata``).
 
 * **Migrations** ``integrations_sap.{connections, schema_snapshot,
   audit_log}`` — per-company connection storage, $metadata snapshot,
   immutable audit trail of OData queries.
 
+* **9 agent tools** — ``sap_describe_entity``, ``sap_search_entity``,
+  ``sap_select``, ``sap_count``, ``sap_top_n``, ``sap_aggregate``,
+  ``sap_navigate``, ``sap_lookup`` (admin), ``sap_invoke_function``
+  (admin). Strict whitelist OData validator. Audit log on every call.
+
 Roadmap
 -------
 
-* Phase 1 — Introspect ``$metadata`` XML → ``schema_snapshot`` + KB
-  metadata seeding via ``register_kb_template``. Strict whitelist OData
-  parser/validator (no ``$expand`` / ``$batch`` / function imports).
-* Phase 2 — 9 agent tools (``sap_select``, ``sap_count``,
-  ``sap_aggregate``, ``sap_top_n``, ``sap_navigate``, ``sap_lookup``,
-  ``sap_describe_entity``, ``sap_search_entity``, ``sap_invoke_function``).
-* Phase 3 — Frontend ``SAPConnectorView`` with 4 internal tabs.
-* Phase 4 — Hardening, fuzzing tests, doc.
-* Phase 5 — Beta dogfood on real SAP partner instance.
+* Phase 3 — Frontend ``SAPConnectorView`` with 4 internal tabs
+  (Connection / Status / Browser / Audit).
+* Phase 4 — Hardening (prompt-injection tests, rate limit per-company,
+  cost guard rails).
+* Phase 5 — Beta dogfood on real SAP partner instance + agent templates
+  (SAP-FI Auditor, SAP-CO Controller).
 
 Full SDK reference: ``docs/sdk/PLUGIN_DEVELOPMENT.md`` in the Piilot
 core repo. Pitfalls and pre-tag checklist:
@@ -82,6 +85,6 @@ class Plugin(_Plugin):
 
         # ---- SDK primitives ----
         wire_routes()        # HTTP endpoints under /plugins/sap/*
-        wire_tools()         # 9 OData agent tools (Phase 2 — stub for now)
+        wire_tools()         # 9 OData agent tools (Phase 2)
         wire_seeds()         # Module row seed (sap.connector)
         wire_connectors()    # SAP S/4HANA Cloud connector spec

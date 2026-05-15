@@ -182,6 +182,54 @@ class ODataClient:
                 response_body=_truncate(response.text),
             ) from exc
 
+    async def request_raw(
+        self,
+        path_after_base: str,
+        *,
+        params: Optional[dict[str, str]] = None,
+        accept_override: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Execute a GET on an arbitrary path appended to ``base_url``.
+
+        Used for queries whose URL shape does not fit
+        :class:`ODataQuery` (the standard composer assumes a flat
+        ``base_url + entity_set + query options`` layout). Examples:
+
+        * Navigation property fetches —
+          ``/A_BusinessPartner('11')/to_Address``.
+        * Function imports —
+          ``/InvokeMyFunction(Param='X')``.
+
+        The caller is responsible for constructing a valid OData path
+        AND for whitelisting any query options it passes — this method
+        does NOT run the query through the validator. Use the
+        higher-level :meth:`request` for any query that the standard
+        composer can produce.
+        """
+        if not path_after_base.startswith("/"):
+            path_after_base = "/" + path_after_base
+        url = self._base_url + path_after_base
+        response = await self._send_get(
+            url, params or {}, accept_override=accept_override
+        )
+        if response.status_code >= 400:
+            raise ODataHTTPError(
+                status=response.status_code,
+                message=(
+                    f"OData {self._version} request to {path_after_base} "
+                    f"failed with HTTP {response.status_code}"
+                ),
+                response_body=_truncate(response.text),
+            )
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise ODataHTTPError(
+                status=response.status_code,
+                message="OData response is not valid JSON",
+                response_body=_truncate(response.text),
+            ) from exc
+
     async def get_metadata(self) -> str:
         """Fetch the raw ``$metadata`` XML at ``<base_url>/$metadata``.
 
