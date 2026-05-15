@@ -44,14 +44,10 @@ def snapshot():
 def test_first_seed_creates_kb_and_columns(snapshot) -> None:
     with (
         patch("piilot_pack_sap.kb_seeder.find_kb", return_value=None) as mock_find,
-        patch(
-            "piilot_pack_sap.kb_seeder.create_kb", return_value={"id": "kb-1"}
-        ) as mock_create,
+        patch("piilot_pack_sap.kb_seeder.create_kb", return_value={"id": "kb-1"}) as mock_create,
         patch("piilot_pack_sap.kb_seeder.add_column") as mock_add_col,
         patch("piilot_pack_sap.kb_seeder.find_rows") as mock_find_rows,
-        patch(
-            "piilot_pack_sap.kb_seeder.insert_batch", return_value=[{"id": "r1"}]
-        ) as mock_insert,
+        patch("piilot_pack_sap.kb_seeder.insert_batch", return_value=[{"id": "r1"}]) as mock_insert,
         patch("piilot_pack_sap.kb_seeder.update_row") as mock_update,
     ):
         result = seed_metadata_kb(
@@ -102,17 +98,11 @@ def test_resync_updates_known_and_inserts_new(snapshot) -> None:
         }
     ]
     with (
-        patch(
-            "piilot_pack_sap.kb_seeder.find_kb", return_value={"id": "kb-1"}
-        ),
+        patch("piilot_pack_sap.kb_seeder.find_kb", return_value={"id": "kb-1"}),
         patch("piilot_pack_sap.kb_seeder.create_kb") as mock_create,
         patch("piilot_pack_sap.kb_seeder.add_column") as mock_add_col,
-        patch(
-            "piilot_pack_sap.kb_seeder.find_rows", return_value=existing_rows
-        ),
-        patch(
-            "piilot_pack_sap.kb_seeder.insert_batch", return_value=[]
-        ) as mock_insert,
+        patch("piilot_pack_sap.kb_seeder.find_rows", return_value=existing_rows),
+        patch("piilot_pack_sap.kb_seeder.insert_batch", return_value=[]) as mock_insert,
         patch("piilot_pack_sap.kb_seeder.update_row") as mock_update,
     ):
         result = seed_metadata_kb(
@@ -157,9 +147,7 @@ def test_resync_inserts_brand_new_entity_sets() -> None:
 </edmx:Edmx>
 """
     snap = parse_metadata(fixture)
-    existing_rows = [
-        {"id": "row-1", "data": {"entity_set_name": "Orders"}}
-    ]
+    existing_rows = [{"id": "row-1", "data": {"entity_set_name": "Orders"}}]
     with (
         patch("piilot_pack_sap.kb_seeder.find_kb", return_value={"id": "kb-1"}),
         patch("piilot_pack_sap.kb_seeder.find_rows", return_value=existing_rows),
@@ -233,10 +221,7 @@ def test_build_description_includes_entity_name_and_type() -> None:
 
 def test_build_description_caps_property_listing() -> None:
     """Entity sets with > 15 properties get a `+N more` suffix."""
-    cols = "\n".join(
-        f'<Property Name="P{i}" Type="Edm.String"/>'
-        for i in range(20)
-    )
+    cols = "\n".join(f'<Property Name="P{i}" Type="Edm.String"/>' for i in range(20))
     fixture = f"""<?xml version="1.0" encoding="utf-8"?>
 <edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
   <edmx:DataServices>

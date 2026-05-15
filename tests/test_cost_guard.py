@@ -96,9 +96,7 @@ async def test_lock_serializes_concurrent_increments() -> None:
     """Many concurrent calls must produce a monotonic sequence with no
     over-counting (no two coroutines should observe the same count)."""
     tracker = SessionCostTracker(budget=100)
-    results = await asyncio.gather(
-        *(tracker.check_and_increment("sess-1") for _ in range(50))
-    )
+    results = await asyncio.gather(*(tracker.check_and_increment("sess-1") for _ in range(50)))
     counts = sorted(r[1] for r in results)
     assert counts == list(range(1, 51))
     # All allowed (under budget).

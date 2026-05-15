@@ -35,8 +35,7 @@ class AuthError(Exception):
 class Auth(Protocol):
     """Async auth strategy applied to an outgoing :class:`httpx.Request`."""
 
-    async def apply(self, request: httpx.Request) -> None:
-        ...  # pragma: no cover
+    async def apply(self, request: httpx.Request) -> None: ...  # pragma: no cover
 
 
 @dataclass(frozen=True)

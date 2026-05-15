@@ -83,13 +83,9 @@ def test_oauth_constructor_validates_inputs() -> None:
     with pytest.raises(ValueError, match="token_url"):
         OAuthClientCredentials(token_url="", client_id="x", client_secret="y")
     with pytest.raises(ValueError, match="client_id"):
-        OAuthClientCredentials(
-            token_url="https://x", client_id="", client_secret="y"
-        )
+        OAuthClientCredentials(token_url="https://x", client_id="", client_secret="y")
     with pytest.raises(ValueError, match="client_id"):
-        OAuthClientCredentials(
-            token_url="https://x", client_id="x", client_secret=""
-        )
+        OAuthClientCredentials(token_url="https://x", client_id="x", client_secret="")
 
 
 def test_oauth_conforms_to_protocol() -> None:

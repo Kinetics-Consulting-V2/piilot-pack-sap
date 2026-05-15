@@ -83,10 +83,7 @@ class RateLimiter:
                 retry_after = max(1, int(timestamps[0] + window - now) + 1)
                 raise HTTPException(
                     status_code=429,
-                    detail=(
-                        f"rate limit exceeded ({limit}/{window}s) for "
-                        f"bucket {bucket!r}"
-                    ),
+                    detail=(f"rate limit exceeded ({limit}/{window}s) for " f"bucket {bucket!r}"),
                     headers={"Retry-After": str(retry_after)},
                 )
             timestamps.append(now)

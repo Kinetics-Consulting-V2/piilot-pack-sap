@@ -39,68 +39,52 @@ def wire_connectors() -> None:
                     "default": "basic",
                     # Values accepted at runtime:
                     #   "basic" | "oauth_client_credentials"
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.auth_mode.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.auth_mode.label"),
                 },
                 {
                     "name": "base_url",
                     "type": "string",
                     "required": True,
                     # E.g. https://my123456.s4hana.cloud.sap (no trailing /)
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.base_url.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.base_url.label"),
                 },
                 # --- Basic auth fields ---
                 {
                     "name": "basic_username",
                     "type": "string",
                     "required": False,
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.basic_username.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.basic_username.label"),
                 },
                 {
                     "name": "basic_password",
                     "type": "secret",
                     "required": False,
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.basic_password.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.basic_password.label"),
                 },
                 # --- OAuth 2.0 client_credentials fields ---
                 {
                     "name": "oauth_token_url",
                     "type": "string",
                     "required": False,
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.oauth_token_url.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.oauth_token_url.label"),
                 },
                 {
                     "name": "oauth_client_id",
                     "type": "string",
                     "required": False,
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.oauth_client_id.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.oauth_client_id.label"),
                 },
                 {
                     "name": "oauth_client_secret",
                     "type": "secret",
                     "required": False,
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.oauth_client_secret.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.oauth_client_secret.label"),
                 },
                 {
                     "name": "oauth_scope",
                     "type": "string",
                     "required": False,
-                    "label_key": (
-                        "sap.connectors.s4hana_cloud.oauth_scope.label"
-                    ),
+                    "label_key": ("sap.connectors.s4hana_cloud.oauth_scope.label"),
                 },
             ],
         }

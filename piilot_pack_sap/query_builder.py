@@ -72,9 +72,7 @@ class ODataQuery:
 
             raise ValidationError(
                 code="invalid_entity_set",
-                message=(
-                    f"entity_set {self.entity_set!r} must be a simple identifier"
-                ),
+                message=(f"entity_set {self.entity_set!r} must be a simple identifier"),
             )
 
         path = f"{base_path.rstrip('/')}/{self.entity_set}"

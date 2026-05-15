@@ -48,9 +48,7 @@ def http_client() -> Iterator[httpx.AsyncClient]:
 @respx.mock
 async def test_first_apply_fetches_and_sets_bearer(clock, http_client) -> None:
     route = respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(
-            200, json={"access_token": "tok-1", "expires_in": 3600}
-        )
+        return_value=httpx.Response(200, json={"access_token": "tok-1", "expires_in": 3600})
     )
 
     auth = OAuthClientCredentials(
@@ -77,9 +75,7 @@ async def test_first_apply_fetches_and_sets_bearer(clock, http_client) -> None:
 @respx.mock
 async def test_token_is_cached_across_apply_calls(clock, http_client) -> None:
     route = respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(
-            200, json={"access_token": "tok", "expires_in": 3600}
-        )
+        return_value=httpx.Response(200, json={"access_token": "tok", "expires_in": 3600})
     )
 
     auth = OAuthClientCredentials(
@@ -135,9 +131,7 @@ async def test_token_refreshes_after_expiry(clock, http_client) -> None:
 async def test_token_kept_when_within_buffer_window(clock, http_client) -> None:
     """Token must still be valid right up to (expiry - buffer)."""
     route = respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(
-            200, json={"access_token": "tok", "expires_in": 100}
-        )
+        return_value=httpx.Response(200, json={"access_token": "tok", "expires_in": 100})
     )
 
     auth = OAuthClientCredentials(
@@ -160,9 +154,7 @@ async def test_token_kept_when_within_buffer_window(clock, http_client) -> None:
 @respx.mock
 async def test_scope_is_sent_when_provided(clock, http_client) -> None:
     route = respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(
-            200, json={"access_token": "tok", "expires_in": 60}
-        )
+        return_value=httpx.Response(200, json={"access_token": "tok", "expires_in": 60})
     )
 
     auth = OAuthClientCredentials(
@@ -183,9 +175,7 @@ async def test_scope_is_sent_when_provided(clock, http_client) -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_idp_401_raises_auth_error(clock, http_client) -> None:
-    respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(401, text="invalid_client")
-    )
+    respx.post(TOKEN_URL).mock(return_value=httpx.Response(401, text="invalid_client"))
 
     auth = OAuthClientCredentials(
         token_url=TOKEN_URL,
@@ -202,9 +192,7 @@ async def test_idp_401_raises_auth_error(clock, http_client) -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_idp_non_json_raises_auth_error(clock, http_client) -> None:
-    respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(200, text="<html>oops</html>")
-    )
+    respx.post(TOKEN_URL).mock(return_value=httpx.Response(200, text="<html>oops</html>"))
 
     auth = OAuthClientCredentials(
         token_url=TOKEN_URL,
@@ -221,9 +209,7 @@ async def test_idp_non_json_raises_auth_error(clock, http_client) -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_idp_missing_access_token_raises(clock, http_client) -> None:
-    respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"expires_in": 60})
-    )
+    respx.post(TOKEN_URL).mock(return_value=httpx.Response(200, json={"expires_in": 60}))
 
     auth = OAuthClientCredentials(
         token_url=TOKEN_URL,
@@ -239,9 +225,7 @@ async def test_idp_missing_access_token_raises(clock, http_client) -> None:
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_idp_missing_expires_in_falls_back_to_one_hour(
-    clock, http_client
-) -> None:
+async def test_idp_missing_expires_in_falls_back_to_one_hour(clock, http_client) -> None:
     route = respx.post(TOKEN_URL).mock(
         return_value=httpx.Response(200, json={"access_token": "tok"})
     )
@@ -270,9 +254,7 @@ async def test_idp_missing_expires_in_falls_back_to_one_hour(
 async def test_concurrent_requests_trigger_single_fetch(clock, http_client) -> None:
     """The asyncio.Lock must serialize concurrent first-fetches."""
     route = respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(
-            200, json={"access_token": "tok", "expires_in": 3600}
-        )
+        return_value=httpx.Response(200, json={"access_token": "tok", "expires_in": 3600})
     )
 
     auth = OAuthClientCredentials(

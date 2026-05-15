@@ -162,9 +162,7 @@ def test_heavy_bucket_429_after_5_calls(monkeypatch, client) -> None:
         patch("piilot_pack_sap.routes.run_in_thread", new=_passthrough),
         patch("piilot_pack_sap.routes.ConnectionResolver") as resolver_cls,
         patch("piilot_pack_sap.routes.ODataClient") as client_cls,
-        patch(
-            "piilot_pack_sap.routes.repository.set_connection_health"
-        ),
+        patch("piilot_pack_sap.routes.repository.set_connection_health"),
     ):
         resolver = MagicMock()
         from piilot_pack_sap.auth import BasicAuth
@@ -194,7 +192,7 @@ def test_heavy_bucket_429_after_5_calls(monkeypatch, client) -> None:
                 '<Property Name="Id" Type="Edm.String" Nullable="false"/>'
                 '</EntityType><EntityContainer Name="C">'
                 '<EntitySet Name="Es" EntityType="x.T"/></EntityContainer>'
-                '</Schema></edmx:DataServices></edmx:Edmx>'
+                "</Schema></edmx:DataServices></edmx:Edmx>"
             )
         )
         odata.aclose = AsyncMock()

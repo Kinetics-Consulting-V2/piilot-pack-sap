@@ -168,8 +168,7 @@ def test_full_realistic_v2_query() -> None:
         entity_set="A_BusinessPartner",
         select=("BusinessPartner", "BusinessPartnerFullName", "CreationDate"),
         filter=(
-            "BusinessPartnerCategory eq '2' and CreationDate ge "
-            "datetime'2026-01-01T00:00:00'"
+            "BusinessPartnerCategory eq '2' and CreationDate ge " "datetime'2026-01-01T00:00:00'"
         ),
         order_by=(("CreationDate", "desc"),),
         top=100,

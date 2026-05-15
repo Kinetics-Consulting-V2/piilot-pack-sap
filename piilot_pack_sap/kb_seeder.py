@@ -98,9 +98,7 @@ def seed_metadata_kb(
             )
         existing_by_name: dict[str, dict] = {}
     else:
-        existing_rows = find_rows(
-            kb_id=kb["id"], filters={}, limit=FIND_ROWS_LIMIT
-        )
+        existing_rows = find_rows(kb_id=kb["id"], filters={}, limit=FIND_ROWS_LIMIT)
         existing_by_name = {
             row["data"]["entity_set_name"]: row
             for row in existing_rows
@@ -154,9 +152,7 @@ def _build_row_data(entity_set: EntitySet) -> dict:
 
 def _build_description(entity_set: EntitySet) -> str:
     parts: list[str] = [f"EntitySet {entity_set.name}"]
-    type_local = (
-        entity_set.entity_type.rsplit(".", 1)[-1] if entity_set.entity_type else ""
-    )
+    type_local = entity_set.entity_type.rsplit(".", 1)[-1] if entity_set.entity_type else ""
     if type_local:
         parts.append(f"type {type_local}")
 

@@ -126,9 +126,7 @@ def test_list_schema_snapshot_respects_limit(mock_cursor) -> None:
 
 def test_get_snapshot_entry_returns_row_when_found(mock_cursor) -> None:
     mock_cursor.fetchone.return_value = {"id": "r1", "entity_set_name": "A_BP"}
-    result = repository.get_snapshot_entry(
-        connection_id="c1", entity_set_name="A_BP"
-    )
+    result = repository.get_snapshot_entry(connection_id="c1", entity_set_name="A_BP")
     assert result == {"id": "r1", "entity_set_name": "A_BP"}
     _, params = mock_cursor.execute.call_args[0]
     assert params == ("c1", "A_BP")
@@ -334,9 +332,7 @@ def test_delete_connection_returns_false_when_missing(mock_cursor) -> None:
 
 def test_set_connection_health_updates_three_fields(mock_cursor) -> None:
     mock_cursor.rowcount = 1
-    ok = repository.set_connection_health(
-        connection_id="conn-1", status="ok"
-    )
+    ok = repository.set_connection_health(connection_id="conn-1", status="ok")
     assert ok is True
     sql, params = mock_cursor.execute.call_args[0]
     assert "last_health_check_at = now()" in sql
@@ -347,9 +343,7 @@ def test_set_connection_health_updates_three_fields(mock_cursor) -> None:
 
 def test_set_connection_health_carries_error(mock_cursor) -> None:
     mock_cursor.rowcount = 1
-    repository.set_connection_health(
-        connection_id="c", status="error", error="boom"
-    )
+    repository.set_connection_health(connection_id="c", status="error", error="boom")
     params = mock_cursor.execute.call_args[0][1]
     assert params == ("error", "boom", "c")
 
@@ -368,9 +362,7 @@ def test_list_audit_log_orders_by_recent_first(mock_cursor) -> None:
 
 def test_list_audit_log_filters_by_status(mock_cursor) -> None:
     mock_cursor.fetchall.return_value = []
-    repository.list_audit_log(
-        company_id="comp-1", status="http_error", limit=25
-    )
+    repository.list_audit_log(company_id="comp-1", status="http_error", limit=25)
     sql, params = mock_cursor.execute.call_args[0]
     assert "AND status = %s" in sql
     assert params == ("comp-1", "http_error", 25)

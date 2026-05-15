@@ -55,9 +55,7 @@ async def _passthrough_run_in_thread(fn: Callable[..., Any], *args: Any, **kwarg
 def fake_session():
     """Stub ``piilot.sdk.session.get`` so it returns a fake state."""
     state = SimpleNamespace(user_infos={"_organization_id": "comp-1"})
-    with patch(
-        "piilot_pack_sap.tool_executor.get_session", return_value=state
-    ) as mock:
+    with patch("piilot_pack_sap.tool_executor.get_session", return_value=state) as mock:
         yield mock
 
 
@@ -73,9 +71,7 @@ def patched_runtime(fake_session):
             "piilot_pack_sap.tool_executor.audit.record_call",
             return_value="audit-uuid",
         ) as mock_audit,
-        patch(
-            "piilot_pack_sap.tool_executor.ODataClient"
-        ) as mock_client_cls,
+        patch("piilot_pack_sap.tool_executor.ODataClient") as mock_client_cls,
     ):
         mock_client = MagicMock()
         mock_client.request = AsyncMock()
@@ -138,9 +134,7 @@ def test_resolve_company_id_raises_when_user_infos_lacks_org() -> None:
 
 @pytest.mark.asyncio
 async def test_execute_happy_path_returns_ok_with_data(patched_runtime) -> None:
-    patched_runtime["client"].request.return_value = {
-        "d": {"results": [{"BusinessPartner": "1"}]}
-    }
+    patched_runtime["client"].request.return_value = {"d": {"results": [{"BusinessPartner": "1"}]}}
     resolver = _resolver_returning(_RESOLVED)
 
     result = await execute_odata_call(
@@ -169,9 +163,7 @@ async def test_execute_happy_path_returns_ok_with_data(patched_runtime) -> None:
 
 @pytest.mark.asyncio
 async def test_execute_counts_v4_value_list(patched_runtime) -> None:
-    patched_runtime["client"].request.return_value = {
-        "value": [{"x": 1}, {"x": 2}, {"x": 3}]
-    }
+    patched_runtime["client"].request.return_value = {"value": [{"x": 1}, {"x": 2}, {"x": 3}]}
     resolver = _resolver_returning(_RESOLVED)
     await execute_odata_call(
         query=ODataQuery(entity_set="X", top=3),
@@ -265,9 +257,7 @@ async def test_execute_auth_error_is_audited(patched_runtime) -> None:
 
 @pytest.mark.asyncio
 async def test_execute_http_error_is_audited(patched_runtime) -> None:
-    patched_runtime["client"].request.side_effect = ODataHTTPError(
-        status=500, message="boom"
-    )
+    patched_runtime["client"].request.side_effect = ODataHTTPError(status=500, message="boom")
     resolver = _resolver_returning(_RESOLVED)
     result = await execute_odata_call(
         query=ODataQuery(entity_set="X", top=1),
@@ -283,9 +273,7 @@ async def test_execute_http_error_is_audited(patched_runtime) -> None:
 
 @pytest.mark.asyncio
 async def test_execute_http_429_maps_to_rate_limited(patched_runtime) -> None:
-    patched_runtime["client"].request.side_effect = ODataHTTPError(
-        status=429, message="slow down"
-    )
+    patched_runtime["client"].request.side_effect = ODataHTTPError(status=429, message="slow down")
     resolver = _resolver_returning(_RESOLVED)
     result = await execute_odata_call(
         query=ODataQuery(entity_set="X", top=1),
@@ -469,9 +457,7 @@ async def test_execute_raw_auth_error(patched_raw_runtime) -> None:
 async def test_execute_raw_connection_error(patched_raw_runtime) -> None:
     from piilot_pack_sap.tool_executor import execute_raw_call
 
-    patched_raw_runtime["client"].request_raw.side_effect = ODataConnectionError(
-        "net down"
-    )
+    patched_raw_runtime["client"].request_raw.side_effect = ODataConnectionError("net down")
     result = await execute_raw_call(
         path_after_base="/X",
         session_id="sess-1",

@@ -93,17 +93,11 @@ class ConnectionResolver:
             raise ResolutionError("connection_id is required")
         if not company_id:
             raise ResolutionError("company_id is required")
-        row = await run_in_thread(
-            repository.get_connection_by_id, connection_id
-        )
+        row = await run_in_thread(repository.get_connection_by_id, connection_id)
         if row is None:
-            raise ResolutionError(
-                f"connection_id={connection_id!r} not found"
-            )
+            raise ResolutionError(f"connection_id={connection_id!r} not found")
         if row.get("company_id") != company_id:
-            raise ResolutionError(
-                "connection belongs to another company"
-            )
+            raise ResolutionError("connection belongs to another company")
         return await self._build_from_row(row)
 
     async def resolve(
@@ -133,15 +127,11 @@ class ConnectionResolver:
                     f"session scope points to unknown connection_id={connection_id!r}"
                 )
             if row.get("company_id") != company_id:
-                raise ResolutionError(
-                    "session scope's connection belongs to another company"
-                )
+                raise ResolutionError("session scope's connection belongs to another company")
         else:
             row = await run_in_thread(repository.get_active_connection, company_id)
             if row is None:
-                raise ResolutionError(
-                    "no active SAP connection configured for this tenant"
-                )
+                raise ResolutionError("no active SAP connection configured for this tenant")
 
         return await self._build_from_row(row)
 
@@ -192,9 +182,7 @@ class ConnectionResolver:
             username = plaintext.get("username")
             password = plaintext.get("password")
             if not username or not password:
-                raise ResolutionError(
-                    "basic auth requires both username and password"
-                )
+                raise ResolutionError("basic auth requires both username and password")
             return BasicAuth(username=username, password=password)
 
         if auth_mode == "oauth_client_credentials":
@@ -225,9 +213,7 @@ class ConnectionResolver:
         """
         conn = get_connection(plugin_connection_id)
         if conn is None:
-            raise ResolutionError(
-                f"plugin_connection_id={plugin_connection_id!r} not found"
-            )
+            raise ResolutionError(f"plugin_connection_id={plugin_connection_id!r} not found")
         creds = conn.get("credentials") or {}
         out: dict[str, str] = {}
         for name, value in creds.items():

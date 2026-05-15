@@ -92,13 +92,9 @@ def patched_resolver():
 
 
 @pytest.mark.asyncio
-async def test_describe_entity_returns_cached_payload(
-    patched_session, patched_resolver
-) -> None:
+async def test_describe_entity_returns_cached_payload(patched_session, patched_resolver) -> None:
     with (
-        patch(
-            "piilot_pack_sap.tools.run_in_thread", new=_passthrough_run_in_thread
-        ),
+        patch("piilot_pack_sap.tools.run_in_thread", new=_passthrough_run_in_thread),
         patch(
             "piilot_pack_sap.tools.repository.get_snapshot_entry",
             return_value={
@@ -124,26 +120,20 @@ async def test_describe_entity_not_found_returns_not_found_status(
     patched_session, patched_resolver
 ) -> None:
     with (
-        patch(
-            "piilot_pack_sap.tools.run_in_thread", new=_passthrough_run_in_thread
-        ),
+        patch("piilot_pack_sap.tools.run_in_thread", new=_passthrough_run_in_thread),
         patch(
             "piilot_pack_sap.tools.repository.get_snapshot_entry",
             return_value=None,
         ),
     ):
-        out = await tools.sap_describe_entity_fn(
-            entity_set="A_Unknown", session_id="sess-1"
-        )
+        out = await tools.sap_describe_entity_fn(entity_set="A_Unknown", session_id="sess-1")
     assert out["status"] == "not_found"
     assert "not in the cached snapshot" in out["error"]
 
 
 @pytest.mark.asyncio
 async def test_describe_entity_rejects_non_identifier(patched_session) -> None:
-    out = await tools.sap_describe_entity_fn(
-        entity_set="bad/path", session_id="sess-1"
-    )
+    out = await tools.sap_describe_entity_fn(entity_set="bad/path", session_id="sess-1")
     assert out["status"] == "validator_rejected"
 
 
@@ -153,9 +143,7 @@ async def test_describe_entity_session_unknown() -> None:
         patch("piilot_pack_sap.tools.get_session", return_value=None),
         patch("piilot_pack_sap.tool_executor.get_session", return_value=None),
     ):
-        out = await tools.sap_describe_entity_fn(
-            entity_set="X", session_id="sess-x"
-        )
+        out = await tools.sap_describe_entity_fn(entity_set="X", session_id="sess-x")
     assert out["status"] == "session_unknown"
 
 
@@ -165,9 +153,7 @@ async def test_describe_entity_resolution_error(patched_session) -> None:
         resolver = MagicMock()
         resolver.resolve = AsyncMock(side_effect=ResolutionError("nope"))
         cls.return_value = resolver
-        out = await tools.sap_describe_entity_fn(
-            entity_set="X", session_id="sess-1"
-        )
+        out = await tools.sap_describe_entity_fn(entity_set="X", session_id="sess-1")
     assert out["status"] == "resolution_error"
 
 
@@ -175,13 +161,9 @@ async def test_describe_entity_resolution_error(patched_session) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_entity_finds_substring_match(
-    patched_session, patched_resolver
-) -> None:
+async def test_search_entity_finds_substring_match(patched_session, patched_resolver) -> None:
     with (
-        patch(
-            "piilot_pack_sap.tools.run_in_thread", new=_passthrough_run_in_thread
-        ),
+        patch("piilot_pack_sap.tools.run_in_thread", new=_passthrough_run_in_thread),
         patch(
             "piilot_pack_sap.tools.repository.list_schema_snapshot",
             return_value=[
@@ -198,9 +180,7 @@ async def test_search_entity_finds_substring_match(
             ],
         ),
     ):
-        out = await tools.sap_search_entity_fn(
-            query="invoice", limit=10, session_id="sess-1"
-        )
+        out = await tools.sap_search_entity_fn(query="invoice", limit=10, session_id="sess-1")
     assert out["status"] == "ok"
     names = [m["entity_set_name"] for m in out["data"]["matches"]]
     assert names == ["A_BillingDocument"]
@@ -214,9 +194,7 @@ async def test_search_entity_empty_query_rejected(patched_session) -> None:
 
 @pytest.mark.asyncio
 async def test_search_entity_invalid_limit_rejected(patched_session) -> None:
-    out = await tools.sap_search_entity_fn(
-        query="x", limit=999, session_id="sess-1"
-    )
+    out = await tools.sap_search_entity_fn(query="x", limit=999, session_id="sess-1")
     assert out["status"] == "validator_rejected"
 
 
@@ -261,17 +239,13 @@ async def test_select_builds_correct_query(patched_executor) -> None:
 
 @pytest.mark.asyncio
 async def test_select_caps_top_at_max(patched_executor) -> None:
-    await tools.sap_select_fn(
-        entity_set="X", top=99999, session_id="sess-1"
-    )
+    await tools.sap_select_fn(entity_set="X", top=99999, session_id="sess-1")
     assert patched_executor.call_args.kwargs["query"].top <= 1000
 
 
 @pytest.mark.asyncio
 async def test_select_invalid_orderby_returns_validator_rejected() -> None:
-    out = await tools.sap_select_fn(
-        entity_set="X", order_by="Name ascending", session_id="sess-1"
-    )
+    out = await tools.sap_select_fn(entity_set="X", order_by="Name ascending", session_id="sess-1")
     assert out["status"] == "validator_rejected"
 
 
@@ -317,9 +291,7 @@ async def test_aggregate_wraps_in_aggregate_parens(patched_executor) -> None:
 
 @pytest.mark.asyncio
 async def test_aggregate_empty_expression_rejected() -> None:
-    out = await tools.sap_aggregate_fn(
-        entity_set="X", aggregation="", session_id="sess-1"
-    )
+    out = await tools.sap_aggregate_fn(entity_set="X", aggregation="", session_id="sess-1")
     assert out["status"] == "validator_rejected"
 
 
@@ -331,9 +303,7 @@ def patched_raw_executor():
     with patch("piilot_pack_sap.tools.execute_raw_call") as mock:
 
         async def _fake(**kwargs):
-            return ToolResult(
-                status="ok", data={"d": {"results": []}}, connection_label="Sandbox"
-            )
+            return ToolResult(status="ok", data={"d": {"results": []}}, connection_label="Sandbox")
 
         mock.side_effect = _fake
         yield mock
@@ -392,9 +362,7 @@ async def test_navigate_rejects_empty_key() -> None:
 
 @pytest.mark.asyncio
 async def test_lookup_refuses_non_admin(patched_session) -> None:
-    out = await tools.sap_lookup_fn(
-        entity_set="A_BusinessPartner", key="11", session_id="sess-1"
-    )
+    out = await tools.sap_lookup_fn(entity_set="A_BusinessPartner", key="11", session_id="sess-1")
     assert out["status"] == "forbidden"
     assert "admin" in out["error"]
 
@@ -417,9 +385,7 @@ async def test_lookup_admin_can_call(patched_session_admin, patched_raw_executor
 async def test_lookup_admin_no_select_omits_param(
     patched_session_admin, patched_raw_executor
 ) -> None:
-    await tools.sap_lookup_fn(
-        entity_set="X", key="1", session_id="sess-1"
-    )
+    await tools.sap_lookup_fn(entity_set="X", key="1", session_id="sess-1")
     assert patched_raw_executor.call_args.kwargs["params"] is None
 
 
@@ -430,9 +396,7 @@ async def test_lookup_role_id_one_is_admin(patched_raw_executor) -> None:
         patch("piilot_pack_sap.tools.get_session", return_value=state),
         patch("piilot_pack_sap.tool_executor.get_session", return_value=state),
     ):
-        out = await tools.sap_lookup_fn(
-            entity_set="X", key="1", session_id="sess-1"
-        )
+        out = await tools.sap_lookup_fn(entity_set="X", key="1", session_id="sess-1")
     assert out["status"] == "ok"
 
 
@@ -540,6 +504,4 @@ def test_tools_strip_session_id_from_llm_schema() -> None:
     for spec in tools._TOOL_SPECS:
         tool = spec["tool"]
         fields = tool.args_schema.model_fields
-        assert (
-            "session_id" not in fields
-        ), f"{spec['id']} still exposes session_id to the LLM"
+        assert "session_id" not in fields, f"{spec['id']} still exposes session_id to the LLM"

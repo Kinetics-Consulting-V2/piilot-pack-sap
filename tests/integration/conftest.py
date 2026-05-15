@@ -44,9 +44,7 @@ SAP_SANDBOX_BASE_URL = os.environ.get(
 
 def pytest_collection_modifyitems(config, items):
     """Mark every test in this folder as ``integration`` and skip without key."""
-    skip = pytest.mark.skip(
-        reason="SAP_API_HUB_KEY not set — integration tests skipped"
-    )
+    skip = pytest.mark.skip(reason="SAP_API_HUB_KEY not set — integration tests skipped")
     for item in items:
         item.add_marker(pytest.mark.integration)
         if SAP_API_HUB_KEY is None:
@@ -62,7 +60,4 @@ def sandbox_api_key() -> str:
 @pytest.fixture(scope="session")
 def sandbox_bp_base_url() -> str:
     """Business Partner OData v2 service base URL on the sandbox."""
-    return (
-        f"{SAP_SANDBOX_BASE_URL.rstrip('/')}"
-        "/sap/opu/odata/sap/API_BUSINESS_PARTNER"
-    )
+    return f"{SAP_SANDBOX_BASE_URL.rstrip('/')}" "/sap/opu/odata/sap/API_BUSINESS_PARTNER"

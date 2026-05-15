@@ -84,7 +84,7 @@ class Plugin(_Plugin):
         ctx.handlers.register("sap.connector", sap_connector_handler)
 
         # ---- SDK primitives ----
-        wire_routes()        # HTTP endpoints under /plugins/sap/*
-        wire_tools()         # 9 OData agent tools (Phase 2)
-        wire_seeds()         # Module row seed (sap.connector)
-        wire_connectors()    # SAP S/4HANA Cloud connector spec
+        wire_routes()  # HTTP endpoints under /plugins/sap/*
+        wire_tools()  # 9 OData agent tools (Phase 2)
+        wire_seeds()  # Module row seed (sap.connector)
+        wire_connectors()  # SAP S/4HANA Cloud connector spec

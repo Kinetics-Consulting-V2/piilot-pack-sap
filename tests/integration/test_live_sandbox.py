@@ -19,9 +19,7 @@ from piilot_pack_sap.query_builder import ODataQuery
 
 
 @pytest.mark.asyncio
-async def test_fetch_one_business_partner(
-    sandbox_api_key: str, sandbox_bp_base_url: str
-) -> None:
+async def test_fetch_one_business_partner(sandbox_api_key: str, sandbox_bp_base_url: str) -> None:
     """Smoke test — the canonical Phase 0 goal: list 1 BP from the sandbox."""
     async with ODataClient(
         base_url=sandbox_bp_base_url,
@@ -29,9 +27,7 @@ async def test_fetch_one_business_partner(
         version="v2",
         timeout=30.0,
     ) as client:
-        data = await client.request(
-            ODataQuery(entity_set="A_BusinessPartner", top=1)
-        )
+        data = await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
     # OData v2 wraps results in ``d.results``.
     results = data["d"]["results"]
@@ -42,9 +38,7 @@ async def test_fetch_one_business_partner(
 
 
 @pytest.mark.asyncio
-async def test_fetch_metadata_and_parse(
-    sandbox_api_key: str, sandbox_bp_base_url: str
-) -> None:
+async def test_fetch_metadata_and_parse(sandbox_api_key: str, sandbox_bp_base_url: str) -> None:
     """Fetch live ``$metadata`` and parse it through ``introspect``."""
     async with ODataClient(
         base_url=sandbox_bp_base_url,
@@ -63,9 +57,7 @@ async def test_fetch_metadata_and_parse(
 
 
 @pytest.mark.asyncio
-async def test_filter_and_select_round_trip(
-    sandbox_api_key: str, sandbox_bp_base_url: str
-) -> None:
+async def test_filter_and_select_round_trip(sandbox_api_key: str, sandbox_bp_base_url: str) -> None:
     """A filtered, projected query should pass the validator and return data."""
     async with ODataClient(
         base_url=sandbox_bp_base_url,
@@ -92,18 +84,14 @@ async def test_filter_and_select_round_trip(
 
 
 @pytest.mark.asyncio
-async def test_count_v2_path_segment(
-    sandbox_api_key: str, sandbox_bp_base_url: str
-) -> None:
+async def test_count_v2_path_segment(sandbox_api_key: str, sandbox_bp_base_url: str) -> None:
     """``GET /A_BusinessPartner/$count`` should return an integer count."""
     async with ODataClient(
         base_url=sandbox_bp_base_url,
         auth=ApiKeyAuth(api_key=sandbox_api_key),
         version="v2",
     ) as client:
-        data = await client.request(
-            ODataQuery(entity_set="A_BusinessPartner", count=True)
-        )
+        data = await client.request(ODataQuery(entity_set="A_BusinessPartner", count=True))
 
     assert "count" in data
     assert isinstance(data["count"], int)
@@ -120,9 +108,7 @@ async def test_invalid_apikey_returns_403(sandbox_bp_base_url: str) -> None:
         max_retries=0,
     ) as client:
         with pytest.raises(ODataHTTPError) as exc:
-            await client.request(
-                ODataQuery(entity_set="A_BusinessPartner", top=1)
-            )
+            await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
     # SAP API Hub returns either 401 or 403 depending on the bogus shape.
     assert exc.value.status in {401, 403}

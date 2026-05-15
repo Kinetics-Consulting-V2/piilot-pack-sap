@@ -38,9 +38,7 @@ DEFAULT_MAX_RETRIES = 3
 INITIAL_RETRY_DELAY_SECONDS = 0.5
 MAX_RETRY_DELAY_SECONDS = 30.0
 
-NON_RETRYABLE_STATUS: frozenset[int] = frozenset(
-    {400, 401, 403, 404, 405, 410, 422, 451}
-)
+NON_RETRYABLE_STATUS: frozenset[int] = frozenset({400, 401, 403, 404, 405, 410, 422, 451})
 
 
 class ODataConnectionError(Exception):
@@ -120,9 +118,7 @@ class ODataClient:
         self._sleep = sleep or asyncio.sleep
 
         self._owns_client = http_client is None
-        self._client: httpx.AsyncClient = http_client or httpx.AsyncClient(
-            timeout=timeout
-        )
+        self._client: httpx.AsyncClient = http_client or httpx.AsyncClient(timeout=timeout)
 
     async def __aenter__(self) -> ODataClient:
         return self
@@ -210,9 +206,7 @@ class ODataClient:
         if not path_after_base.startswith("/"):
             path_after_base = "/" + path_after_base
         url = self._base_url + path_after_base
-        response = await self._send_get(
-            url, params or {}, accept_override=accept_override
-        )
+        response = await self._send_get(url, params or {}, accept_override=accept_override)
         if response.status_code >= 400:
             raise ODataHTTPError(
                 status=response.status_code,
@@ -239,9 +233,7 @@ class ODataClient:
         ``$metadata`` is exclusively XML (CSDL).
         """
         url = f"{self._base_url}/$metadata"
-        response = await self._send_get(
-            url, params={}, accept_override="application/xml"
-        )
+        response = await self._send_get(url, params={}, accept_override="application/xml")
         if response.status_code >= 400:
             raise ODataHTTPError(
                 status=response.status_code,

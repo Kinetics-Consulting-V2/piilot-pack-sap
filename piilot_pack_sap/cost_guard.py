@@ -65,9 +65,7 @@ class SessionCostTracker:
     def get(self, session_id: str | None) -> int:
         return self._counts.get(self._key(session_id), 0)
 
-    async def check_and_increment(
-        self, session_id: str | None
-    ) -> tuple[bool, int]:
+    async def check_and_increment(self, session_id: str | None) -> tuple[bool, int]:
         """Atomically check the budget and increment on success.
 
         Returns ``(allowed, current_count)``. ``current_count`` is the

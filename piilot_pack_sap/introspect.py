@@ -118,9 +118,7 @@ def _detect_version(root_tag: str) -> tuple[ODataVersion, str]:
         return "v2", NS_EDM_V2
     if root_tag.startswith(f"{{{NS_EDMX_V4}}}"):
         return "v4", NS_EDM_V4
-    raise IntrospectError(
-        f"Unknown OData edmx namespace in root element: {root_tag!r}"
-    )
+    raise IntrospectError(f"Unknown OData edmx namespace in root element: {root_tag!r}")
 
 
 def _find_first(root: Element, edm_ns: str, local_name: str) -> Element | None:
@@ -147,12 +145,9 @@ def _index_entity_types(
                 pname = pref.get("Name")
                 if pname:
                     keys.append(pname)
-        props = tuple(
-            _parse_property(p) for p in et.findall(f"{{{edm_ns}}}Property")
-        )
+        props = tuple(_parse_property(p) for p in et.findall(f"{{{edm_ns}}}Property"))
         navs = tuple(
-            _parse_navigation(n, version)
-            for n in et.findall(f"{{{edm_ns}}}NavigationProperty")
+            _parse_navigation(n, version) for n in et.findall(f"{{{edm_ns}}}NavigationProperty")
         )
         index[name] = {
             "key": tuple(keys),

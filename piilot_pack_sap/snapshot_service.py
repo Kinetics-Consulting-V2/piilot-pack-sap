@@ -71,11 +71,7 @@ def _extract_description(entity_set: EntitySet) -> str | None:
     ``integrations_sap.schema_snapshot.description``. Keep it short — the
     KB seeder (cf. ``kb_seeder.py``) produces a richer text for embeddings.
     """
-    labelled = [
-        f"{p.name}: {p.sap_label}"
-        for p in entity_set.properties
-        if p.sap_label
-    ][:3]
+    labelled = [f"{p.name}: {p.sap_label}" for p in entity_set.properties if p.sap_label][:3]
     if not labelled:
         return None
     return " · ".join(labelled)

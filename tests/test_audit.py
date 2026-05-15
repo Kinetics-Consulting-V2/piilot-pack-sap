@@ -151,7 +151,5 @@ def test_record_call_accepts_all_documented_statuses(status: str) -> None:
         "piilot_pack_sap.audit.repository.insert_audit_log",
         return_value="x",
     ) as mock_insert:
-        audit.record_call(
-            company_id="c", tool_id="t", odata_url="/u", status=status
-        )
+        audit.record_call(company_id="c", tool_id="t", odata_url="/u", status=status)
     assert mock_insert.call_args[0][0]["status"] == status

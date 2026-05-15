@@ -67,9 +67,9 @@ def test_persist_handles_empty_snapshot() -> None:
     empty_xml = (
         '<edmx:Edmx Version="4.0" '
         'xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">'
-        '<edmx:DataServices>'
+        "<edmx:DataServices>"
         '<Schema Namespace="x" xmlns="http://docs.oasis-open.org/odata/ns/edm"/>'
-        '</edmx:DataServices></edmx:Edmx>'
+        "</edmx:DataServices></edmx:Edmx>"
     )
     snapshot = parse_metadata(empty_xml)
     with patch(

@@ -140,9 +140,7 @@ async def health(auth: AuthUser) -> dict:
         "user_id": user_id,
         "role": role,
         "connections_total": len(connections),
-        "connections_active": sum(
-            1 for c in connections if c.get("is_active")
-        ),
+        "connections_active": sum(1 for c in connections if c.get("is_active")),
     }
 
 
@@ -241,14 +239,10 @@ async def update_connection(
         fields["is_active"] = payload.is_active
 
     if fields:
-        await run_in_thread(
-            repository.update_connection, connection_id, **fields
-        )
+        await run_in_thread(repository.update_connection, connection_id, **fields)
 
     if payload.credentials is not None:
-        _validate_credentials(
-            payload.auth_mode or row["auth_mode"], payload.credentials
-        )
+        _validate_credentials(payload.auth_mode or row["auth_mode"], payload.credentials)
         plugin_connection_id = row.get("plugin_connection_id")
         if not plugin_connection_id:
             raise HTTPException(
@@ -261,9 +255,7 @@ async def update_connection(
             credentials=_credentials_to_dict(payload.credentials),
         )
 
-    fresh = await run_in_thread(
-        repository.get_connection_by_id, connection_id
-    )
+    fresh = await run_in_thread(repository.get_connection_by_id, connection_id)
     return _serialize_connection(fresh)
 
 
@@ -310,9 +302,7 @@ async def test_connection(
         connection_id=connection_id, company_id=company_id
     )
 
-    client = ODataClient(
-        base_url=base_url, auth=resolved.auth, version=resolved.version
-    )
+    client = ODataClient(base_url=base_url, auth=resolved.auth, version=resolved.version)
     try:
         try:
             xml = await client.get_metadata()
@@ -377,30 +367,22 @@ async def sync_connection(
         connection_id=connection_id, company_id=company_id
     )
 
-    client = ODataClient(
-        base_url=base_url, auth=resolved.auth, version=resolved.version
-    )
+    client = ODataClient(base_url=base_url, auth=resolved.auth, version=resolved.version)
     try:
         xml = await client.get_metadata()
     except ODataHTTPError as exc:
         await client.aclose()
-        raise HTTPException(
-            status_code=502, detail=f"SAP returned HTTP {exc.status}"
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"SAP returned HTTP {exc.status}") from exc
     except ODataConnectionError as exc:
         await client.aclose()
-        raise HTTPException(
-            status_code=504, detail=f"SAP unreachable: {exc}"
-        ) from exc
+        raise HTTPException(status_code=504, detail=f"SAP unreachable: {exc}") from exc
     finally:
         await client.aclose()
 
     try:
         snapshot = parse_metadata(xml)
     except IntrospectError as exc:
-        raise HTTPException(
-            status_code=502, detail=f"failed to parse $metadata: {exc}"
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"failed to parse $metadata: {exc}") from exc
 
     persisted = await run_in_thread(
         snapshot_service.persist_schema_snapshot,
@@ -540,9 +522,7 @@ def _credentials_to_dict(creds: ConnectionCredentials) -> dict[str, str]:
     return {k: v for k, v in creds.model_dump().items() if v is not None}
 
 
-async def _resolve_for_company(
-    *, connection_id: str, company_id: str
-) -> tuple[Any, str]:
+async def _resolve_for_company(*, connection_id: str, company_id: str) -> tuple[Any, str]:
     """Resolve the explicit connection id under tenant isolation.
 
     Raises ``HTTPException`` on missing row / cross-tenant / unresolvable
@@ -588,9 +568,7 @@ def _serialize_connection(row: dict) -> dict:
         "auth_mode": row.get("auth_mode") or "basic",
         "is_active": bool(row.get("is_active")),
         "plugin_connection_id": (
-            str(row["plugin_connection_id"])
-            if row.get("plugin_connection_id")
-            else None
+            str(row["plugin_connection_id"]) if row.get("plugin_connection_id") else None
         ),
         "last_health_check_at": _stringify(row.get("last_health_check_at")),
         "last_health_status": row.get("last_health_status"),

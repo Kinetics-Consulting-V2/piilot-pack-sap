@@ -92,9 +92,7 @@ def _set_role(app, role_tuple):
 
 @pytest.fixture(autouse=True)
 def _patched_run_in_thread():
-    with patch(
-        "piilot_pack_sap.routes.run_in_thread", new=_passthrough_run_in_thread
-    ):
+    with patch("piilot_pack_sap.routes.run_in_thread", new=_passthrough_run_in_thread):
         yield
 
 
@@ -120,9 +118,7 @@ def test_health_returns_counts(app, client) -> None:
     _set_role(app, _USER)
     with patch(
         "piilot_pack_sap.routes.repository.list_connections",
-        return_value=[
-            {"is_active": True}, {"is_active": True}, {"is_active": False}
-        ],
+        return_value=[{"is_active": True}, {"is_active": True}, {"is_active": False}],
     ):
         r = client.get("/plugins/sap/health")
     assert r.status_code == 200
@@ -255,9 +251,7 @@ def test_create_connection_oauth_rejects_missing_token_url(app, client) -> None:
     assert r.status_code == 422
 
 
-def test_create_connection_rolls_back_plugin_connection_on_failure(
-    app, client
-) -> None:
+def test_create_connection_rolls_back_plugin_connection_on_failure(app, client) -> None:
     """Verify the rollback path: when insert_connection raises, the
     encrypted plugin_connection row created in the previous step must be
     deleted to avoid orphan secrets accumulating in the core table."""
@@ -271,9 +265,7 @@ def test_create_connection_rolls_back_plugin_connection_on_failure(
             "piilot_pack_sap.routes.repository.insert_connection",
             side_effect=RuntimeError("db down"),
         ),
-        patch(
-            "piilot_pack_sap.routes.sdk_delete_connection"
-        ) as mock_delete,
+        patch("piilot_pack_sap.routes.sdk_delete_connection") as mock_delete,
     ):
         # TestClient propagates uncaught exceptions instead of letting
         # the FastAPI default 500 handler do its thing. The behaviour we
@@ -331,9 +323,7 @@ def test_patch_connection_updates_credentials_via_sdk(app, client) -> None:
             "piilot_pack_sap.routes.repository.update_connection",
             return_value=True,
         ),
-        patch(
-            "piilot_pack_sap.routes.sdk_update_config"
-        ) as mock_update_config,
+        patch("piilot_pack_sap.routes.sdk_update_config") as mock_update_config,
     ):
         r = client.patch(
             "/plugins/sap/connections/conn-1",
@@ -354,9 +344,7 @@ def test_patch_connection_404_on_cross_tenant(app, client) -> None:
         "piilot_pack_sap.routes.repository.get_connection_by_id",
         return_value=_CONNECTION_ROW,
     ):
-        r = client.patch(
-            "/plugins/sap/connections/conn-1", json={"label": "X"}
-        )
+        r = client.patch("/plugins/sap/connections/conn-1", json={"label": "X"})
     assert r.status_code == 404
 
 
@@ -390,9 +378,7 @@ def test_delete_connection_admin_cascades_to_sdk(app, client) -> None:
             "piilot_pack_sap.routes.repository.delete_connection",
             return_value=True,
         ) as mock_del_repo,
-        patch(
-            "piilot_pack_sap.routes.sdk_delete_connection"
-        ) as mock_del_sdk,
+        patch("piilot_pack_sap.routes.sdk_delete_connection") as mock_del_sdk,
     ):
         r = client.delete("/plugins/sap/connections/conn-1")
     assert r.status_code == 204
@@ -405,9 +391,7 @@ def test_delete_connection_admin_cascades_to_sdk(app, client) -> None:
 
 @pytest.fixture
 def patched_resolver():
-    with patch(
-        "piilot_pack_sap.routes.ConnectionResolver"
-    ) as cls:
+    with patch("piilot_pack_sap.routes.ConnectionResolver") as cls:
         resolver = MagicMock()
         resolver.resolve_for_connection_id = AsyncMock(return_value=_RESOLVED)
         cls.return_value = resolver
@@ -423,7 +407,7 @@ _TINY_METADATA = (
     '<Property Name="Id" Type="Edm.String" Nullable="false"/>'
     '</EntityType><EntityContainer Name="C">'
     '<EntitySet Name="Es" EntityType="x.T"/></EntityContainer>'
-    '</Schema></edmx:DataServices></edmx:Edmx>'
+    "</Schema></edmx:DataServices></edmx:Edmx>"
 )
 
 
@@ -441,9 +425,7 @@ def test_test_connection_returns_ok_status(
     app, client, patched_resolver, patched_odata_client
 ) -> None:
     _set_role(app, _BUILDER)
-    with patch(
-        "piilot_pack_sap.routes.repository.set_connection_health"
-    ) as mock_health:
+    with patch("piilot_pack_sap.routes.repository.set_connection_health") as mock_health:
         r = client.post("/plugins/sap/connections/conn-1/test")
     assert r.status_code == 200
     body = r.json()
@@ -459,12 +441,8 @@ def test_test_connection_handles_http_error(
     app, client, patched_resolver, patched_odata_client
 ) -> None:
     _set_role(app, _BUILDER)
-    patched_odata_client.get_metadata.side_effect = ODataHTTPError(
-        status=403, message="forbidden"
-    )
-    with patch(
-        "piilot_pack_sap.routes.repository.set_connection_health"
-    ) as mock_health:
+    patched_odata_client.get_metadata.side_effect = ODataHTTPError(status=403, message="forbidden")
+    with patch("piilot_pack_sap.routes.repository.set_connection_health") as mock_health:
         r = client.post("/plugins/sap/connections/conn-1/test")
     body = r.json()
     assert body["ok"] is False
@@ -477,12 +455,8 @@ def test_test_connection_handles_connection_error(
     app, client, patched_resolver, patched_odata_client
 ) -> None:
     _set_role(app, _BUILDER)
-    patched_odata_client.get_metadata.side_effect = ODataConnectionError(
-        "net down"
-    )
-    with patch(
-        "piilot_pack_sap.routes.repository.set_connection_health"
-    ):
+    patched_odata_client.get_metadata.side_effect = ODataConnectionError("net down")
+    with patch("piilot_pack_sap.routes.repository.set_connection_health"):
         r = client.post("/plugins/sap/connections/conn-1/test")
     assert r.json()["status"] == "unreachable"
 
@@ -492,9 +466,7 @@ def test_test_connection_handles_parse_error(
 ) -> None:
     _set_role(app, _BUILDER)
     patched_odata_client.get_metadata.return_value = "<not valid xml"
-    with patch(
-        "piilot_pack_sap.routes.repository.set_connection_health"
-    ):
+    with patch("piilot_pack_sap.routes.repository.set_connection_health"):
         r = client.post("/plugins/sap/connections/conn-1/test")
     assert r.json()["status"] == "parse_error"
 
@@ -533,9 +505,7 @@ def test_sync_connection_persists_snapshot_and_seeds_kb(
                 "created": True,
             },
         ) as mock_seed,
-        patch(
-            "piilot_pack_sap.routes.repository.set_connection_health"
-        ),
+        patch("piilot_pack_sap.routes.repository.set_connection_health"),
     ):
         r = client.post("/plugins/sap/connections/conn-1/sync")
     assert r.status_code == 200
@@ -552,9 +522,7 @@ def test_sync_connection_http_error_returns_502(
     app, client, patched_resolver, patched_odata_client
 ) -> None:
     _set_role(app, _BUILDER)
-    patched_odata_client.get_metadata.side_effect = ODataHTTPError(
-        status=500, message="boom"
-    )
+    patched_odata_client.get_metadata.side_effect = ODataHTTPError(status=500, message="boom")
     r = client.post("/plugins/sap/connections/conn-1/sync")
     assert r.status_code == 502
 
@@ -563,9 +531,7 @@ def test_sync_connection_unreachable_returns_504(
     app, client, patched_resolver, patched_odata_client
 ) -> None:
     _set_role(app, _BUILDER)
-    patched_odata_client.get_metadata.side_effect = ODataConnectionError(
-        "down"
-    )
+    patched_odata_client.get_metadata.side_effect = ODataConnectionError("down")
     r = client.post("/plugins/sap/connections/conn-1/sync")
     assert r.status_code == 504
 
@@ -699,9 +665,7 @@ def test_list_audit_propagates_status_filter(app, client) -> None:
             return_value=[],
         ) as mock_list,
     ):
-        client.get(
-            "/plugins/sap/connections/conn-1/audit?status=http_error&limit=25"
-        )
+        client.get("/plugins/sap/connections/conn-1/audit?status=http_error&limit=25")
     kwargs = mock_list.call_args.kwargs
     assert kwargs["status"] == "http_error"
     assert kwargs["limit"] == 25

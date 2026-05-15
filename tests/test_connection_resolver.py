@@ -36,9 +36,7 @@ def patched_runtime():
         patch("piilot_pack_sap.connection_resolver.get_scope") as mock_get_scope,
         patch("piilot_pack_sap.connection_resolver.get_connection") as mock_get_conn,
         patch("piilot_pack_sap.connection_resolver.decrypt", side_effect=lambda v: f"plain:{v}"),
-        patch(
-            "piilot_pack_sap.connection_resolver.repository.get_connection_by_id"
-        ) as mock_by_id,
+        patch("piilot_pack_sap.connection_resolver.repository.get_connection_by_id") as mock_by_id,
         patch(
             "piilot_pack_sap.connection_resolver.repository.get_active_connection"
         ) as mock_active,
@@ -115,9 +113,7 @@ async def test_resolve_uses_session_scope_when_set(patched_runtime) -> None:
         }
     }
 
-    resolved = await ConnectionResolver().resolve(
-        company_id="comp-1", session_id="sess-1"
-    )
+    resolved = await ConnectionResolver().resolve(company_id="comp-1", session_id="sess-1")
 
     assert resolved.connection_id == "conn-2"
     assert resolved.auth_mode == "oauth_client_credentials"
@@ -143,9 +139,7 @@ async def test_resolve_ignores_scope_of_other_plugin(patched_runtime) -> None:
         "credentials": {"username": "u", "password": "p"}
     }
 
-    resolved = await ConnectionResolver().resolve(
-        company_id="comp-1", session_id="sess-1"
-    )
+    resolved = await ConnectionResolver().resolve(company_id="comp-1", session_id="sess-1")
 
     assert resolved.connection_id == "conn-1"
     patched_runtime["get_connection_by_id"].assert_not_called()
@@ -297,11 +291,7 @@ async def test_resolve_decrypt_failure_falls_back_to_plaintext(patched_runtime) 
     patched_runtime["get_connection"].return_value = {
         "credentials": {"username": "legacy_u", "password": "encrypted_p"}
     }
-    with patch(
-        "piilot_pack_sap.connection_resolver.decrypt", side_effect=decrypt_one_only
-    ):
-        resolved = await ConnectionResolver().resolve(
-            company_id="comp-1", session_id="x"
-        )
+    with patch("piilot_pack_sap.connection_resolver.decrypt", side_effect=decrypt_one_only):
+        resolved = await ConnectionResolver().resolve(company_id="comp-1", session_id="x")
     assert resolved.auth.username == "legacy_u"
     assert resolved.auth.password == "plain_password"

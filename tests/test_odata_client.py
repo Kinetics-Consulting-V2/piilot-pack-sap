@@ -46,9 +46,7 @@ async def test_request_success_returns_parsed_json() -> None:
         return_value=httpx.Response(200, json=payload)
     )
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2"
-    ) as client:
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2") as client:
         data = await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
     assert data == payload
@@ -65,9 +63,7 @@ async def test_request_sends_querystring_with_dollar_params() -> None:
         return_value=httpx.Response(200, json={"d": {"results": []}})
     )
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2"
-    ) as client:
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2") as client:
         await client.request(
             ODataQuery(
                 entity_set="A_BusinessPartner",
@@ -91,9 +87,7 @@ async def test_request_v4_sets_odata_version_headers() -> None:
         return_value=httpx.Response(200, json={"value": []})
     )
 
-    async with ODataClient(
-        base_url=BASE_V4, auth=ApiKeyAuth(api_key="k"), version="v4"
-    ) as client:
+    async with ODataClient(base_url=BASE_V4, auth=ApiKeyAuth(api_key="k"), version="v4") as client:
         await client.request(ODataQuery(entity_set="Orders", top=1))
 
     headers = route.calls[0].request.headers
@@ -108,12 +102,8 @@ async def test_count_v2_response_parsed_as_int() -> None:
         return_value=httpx.Response(200, text="42")
     )
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2"
-    ) as client:
-        result = await client.request(
-            ODataQuery(entity_set="A_BusinessPartner", count=True)
-        )
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2") as client:
+        result = await client.request(ODataQuery(entity_set="A_BusinessPartner", count=True))
 
     assert result == {"count": 42}
 
@@ -125,13 +115,9 @@ async def test_count_v2_response_with_non_integer_raises() -> None:
         return_value=httpx.Response(200, text="not-a-number")
     )
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2"
-    ) as client:
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="k"), version="v2") as client:
         with pytest.raises(ODataHTTPError, match="unexpected"):
-            await client.request(
-                ODataQuery(entity_set="A_BusinessPartner", count=True)
-            )
+            await client.request(ODataQuery(entity_set="A_BusinessPartner", count=True))
 
 
 # ---------- $metadata -------------------------------------------------------
@@ -141,13 +127,9 @@ async def test_count_v2_response_with_non_integer_raises() -> None:
 @respx.mock
 async def test_get_metadata_returns_raw_xml() -> None:
     xml = '<?xml version="1.0"?><edmx:Edmx/>'
-    respx.get(f"{BASE_V2}/$metadata").mock(
-        return_value=httpx.Response(200, text=xml)
-    )
+    respx.get(f"{BASE_V2}/$metadata").mock(return_value=httpx.Response(200, text=xml))
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="k")
-    ) as client:
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="k")) as client:
         result = await client.get_metadata()
 
     assert result == xml
@@ -156,13 +138,9 @@ async def test_get_metadata_returns_raw_xml() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_get_metadata_raises_on_error_status() -> None:
-    respx.get(f"{BASE_V2}/$metadata").mock(
-        return_value=httpx.Response(403, text="Forbidden")
-    )
+    respx.get(f"{BASE_V2}/$metadata").mock(return_value=httpx.Response(403, text="Forbidden"))
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="bad")
-    ) as client:
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="bad")) as client:
         with pytest.raises(ODataHTTPError) as exc:
             await client.get_metadata()
     assert exc.value.status == 403
@@ -195,9 +173,7 @@ async def test_basic_auth_propagates_through_client() -> None:
 @pytest.mark.parametrize("status", [400, 401, 403, 404, 422])
 @pytest.mark.asyncio
 @respx.mock
-async def test_non_retryable_status_raises_immediately(
-    status: int, fake_sleep
-) -> None:
+async def test_non_retryable_status_raises_immediately(status: int, fake_sleep) -> None:
     route = respx.get(f"{BASE_V2}/A_BusinessPartner").mock(
         return_value=httpx.Response(status, text=f"err {status}")
     )
@@ -237,9 +213,7 @@ async def test_429_retries_then_succeeds_with_retry_after(fake_sleep) -> None:
         sleep=fake_sleep,
         max_retries=3,
     ) as client:
-        result = await client.request(
-            ODataQuery(entity_set="A_BusinessPartner", top=1)
-        )
+        result = await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
     assert result["d"]["results"][0]["x"] == 1
     assert fake_sleep.calls == [2.0]
@@ -271,9 +245,7 @@ async def test_429_no_retry_after_falls_back_to_backoff(fake_sleep) -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_429_exhausts_retries_returns_last_response(fake_sleep) -> None:
-    respx.get(f"{BASE_V2}/A_BusinessPartner").mock(
-        return_value=httpx.Response(429, text="slow")
-    )
+    respx.get(f"{BASE_V2}/A_BusinessPartner").mock(return_value=httpx.Response(429, text="slow"))
 
     async with ODataClient(
         base_url=BASE_V2,
@@ -310,9 +282,7 @@ async def test_5xx_is_retried(status: int, fake_sleep) -> None:
         sleep=fake_sleep,
         max_retries=3,
     ) as client:
-        result = await client.request(
-            ODataQuery(entity_set="A_BusinessPartner", top=1)
-        )
+        result = await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
     assert result == {"d": {"results": []}}
     assert len(fake_sleep.calls) == 1
@@ -324,9 +294,7 @@ async def test_5xx_is_retried(status: int, fake_sleep) -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_connection_error_retries_then_raises(fake_sleep) -> None:
-    respx.get(f"{BASE_V2}/A_BusinessPartner").mock(
-        side_effect=httpx.ConnectError("network down")
-    )
+    respx.get(f"{BASE_V2}/A_BusinessPartner").mock(side_effect=httpx.ConnectError("network down"))
 
     async with ODataClient(
         base_url=BASE_V2,
@@ -359,9 +327,7 @@ async def test_connection_error_recovers_on_retry(fake_sleep) -> None:
         sleep=fake_sleep,
         max_retries=3,
     ) as client:
-        result = await client.request(
-            ODataQuery(entity_set="A_BusinessPartner", top=1)
-        )
+        result = await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
     assert result == {"d": {"results": []}}
 
@@ -401,13 +367,9 @@ async def test_invalid_json_response_raises_odata_http_error() -> None:
         return_value=httpx.Response(200, text="<html>nope</html>")
     )
 
-    async with ODataClient(
-        base_url=BASE_V2, auth=ApiKeyAuth(api_key="k")
-    ) as client:
+    async with ODataClient(base_url=BASE_V2, auth=ApiKeyAuth(api_key="k")) as client:
         with pytest.raises(ODataHTTPError, match="not valid JSON"):
-            await client.request(
-                ODataQuery(entity_set="A_BusinessPartner", top=1)
-            )
+            await client.request(ODataQuery(entity_set="A_BusinessPartner", top=1))
 
 
 # ---------- Lifecycle -------------------------------------------------------

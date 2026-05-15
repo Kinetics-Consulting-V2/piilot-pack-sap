@@ -148,9 +148,7 @@ async def sap_describe_entity_fn(
 
     try:
         resolver = ConnectionResolver()
-        resolved = await resolver.resolve(
-            company_id=company_id, session_id=session_id
-        )
+        resolved = await resolver.resolve(company_id=company_id, session_id=session_id)
     except ResolutionError as exc:
         return ToolResult(status="resolution_error", error=str(exc)).to_dict()
 
@@ -229,9 +227,7 @@ async def sap_search_entity_fn(
         ).to_dict()
 
     try:
-        resolved = await ConnectionResolver().resolve(
-            company_id=company_id, session_id=session_id
-        )
+        resolved = await ConnectionResolver().resolve(company_id=company_id, session_id=session_id)
     except ResolutionError as exc:
         return ToolResult(status="resolution_error", error=str(exc)).to_dict()
 
@@ -313,12 +309,8 @@ async def sap_select_fn(
             top=max(1, min(top, DEFAULT_MAX_TOP)),
         )
     except ValidationError as exc:
-        return ToolResult(
-            status="validator_rejected", error=exc.message
-        ).to_dict()
-    result = await execute_odata_call(
-        query=query, session_id=session_id, tool_id="sap.select"
-    )
+        return ToolResult(status="validator_rejected", error=exc.message).to_dict()
+    result = await execute_odata_call(query=query, session_id=session_id, tool_id="sap.select")
     return result.to_dict()
 
 
@@ -352,12 +344,8 @@ async def sap_count_fn(
             count=True,
         )
     except ValidationError as exc:
-        return ToolResult(
-            status="validator_rejected", error=exc.message
-        ).to_dict()
-    result = await execute_odata_call(
-        query=query, session_id=session_id, tool_id="sap.count"
-    )
+        return ToolResult(status="validator_rejected", error=exc.message).to_dict()
+    result = await execute_odata_call(query=query, session_id=session_id, tool_id="sap.count")
     return result.to_dict()
 
 
@@ -402,12 +390,8 @@ async def sap_top_n_fn(
             top=n,
         )
     except ValidationError as exc:
-        return ToolResult(
-            status="validator_rejected", error=exc.message
-        ).to_dict()
-    result = await execute_odata_call(
-        query=query, session_id=session_id, tool_id="sap.top_n"
-    )
+        return ToolResult(status="validator_rejected", error=exc.message).to_dict()
+    result = await execute_odata_call(query=query, session_id=session_id, tool_id="sap.top_n")
     return result.to_dict()
 
 
@@ -452,12 +436,8 @@ async def sap_aggregate_fn(
             apply=f"aggregate({aggregation})",
         )
     except ValidationError as exc:
-        return ToolResult(
-            status="validator_rejected", error=exc.message
-        ).to_dict()
-    result = await execute_odata_call(
-        query=query, session_id=session_id, tool_id="sap.aggregate"
-    )
+        return ToolResult(status="validator_rejected", error=exc.message).to_dict()
+    result = await execute_odata_call(query=query, session_id=session_id, tool_id="sap.aggregate")
     return result.to_dict()
 
 
@@ -499,14 +479,10 @@ async def sap_navigate_fn(
     if not _is_simple_identifier(navigation_property):
         return ToolResult(
             status="validator_rejected",
-            error=(
-                f"navigation_property {navigation_property!r} is not a simple identifier"
-            ),
+            error=(f"navigation_property {navigation_property!r} is not a simple identifier"),
         ).to_dict()
     if not key:
-        return ToolResult(
-            status="validator_rejected", error="key must not be empty"
-        ).to_dict()
+        return ToolResult(status="validator_rejected", error="key must not be empty").to_dict()
     top = max(1, min(top, DEFAULT_MAX_TOP))
 
     path = f"/{entity_set}({_quote_key(key)})/{navigation_property}"
@@ -555,9 +531,7 @@ async def sap_lookup_fn(
             error=f"entity_set {entity_set!r} is not a simple identifier",
         ).to_dict()
     if not key:
-        return ToolResult(
-            status="validator_rejected", error="key must not be empty"
-        ).to_dict()
+        return ToolResult(status="validator_rejected", error="key must not be empty").to_dict()
 
     path = f"/{entity_set}({_quote_key(key)})"
     params: dict[str, str] = {}
@@ -650,10 +624,7 @@ def _render_function_params(params: dict[str, Any]) -> Any:
         else:
             return ToolResult(
                 status="validator_rejected",
-                error=(
-                    f"parameter {name!r} has unsupported type "
-                    f"{type(value).__name__}"
-                ),
+                error=(f"parameter {name!r} has unsupported type " f"{type(value).__name__}"),
             )
     return ",".join(chunks)
 

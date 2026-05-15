@@ -90,9 +90,7 @@ def resolve_company_id(session_id: str) -> str:
         value = user_infos.get(key)
         if isinstance(value, str) and value:
             return value
-    raise SessionUnknownError(
-        "session state does not carry an organization/company id"
-    )
+    raise SessionUnknownError("session state does not carry an organization/company id")
 
 
 async def execute_odata_call(
@@ -129,9 +127,7 @@ async def execute_odata_call(
         )
 
     try:
-        resolved = await resolver.resolve(
-            company_id=company_id, session_id=session_id
-        )
+        resolved = await resolver.resolve(company_id=company_id, session_id=session_id)
     except ResolutionError as exc:
         audit_id = await _audit_async(
             company_id=company_id,
@@ -143,9 +139,7 @@ async def execute_odata_call(
             user_id=user_id,
             session_id=session_id,
         )
-        return ToolResult(
-            status="resolution_error", error=str(exc), audit_id=audit_id
-        )
+        return ToolResult(status="resolution_error", error=str(exc), audit_id=audit_id)
 
     odata_url = f"{resolved.base_url}/{query.entity_set}"
 
@@ -157,9 +151,7 @@ async def execute_odata_call(
     started = time.monotonic()
     try:
         try:
-            payload = await client.request(
-                query, allowed_properties=allowed_properties
-            )
+            payload = await client.request(query, allowed_properties=allowed_properties)
             latency_ms = int((time.monotonic() - started) * 1000)
         except ValidationError as exc:
             audit_id = await _audit_async(
@@ -295,9 +287,7 @@ async def execute_raw_call(
         )
 
     try:
-        resolved = await resolver.resolve(
-            company_id=company_id, session_id=session_id
-        )
+        resolved = await resolver.resolve(company_id=company_id, session_id=session_id)
     except ResolutionError as exc:
         audit_id = await _audit_async(
             company_id=company_id,
@@ -309,9 +299,7 @@ async def execute_raw_call(
             user_id=user_id,
             session_id=session_id,
         )
-        return ToolResult(
-            status="resolution_error", error=str(exc), audit_id=audit_id
-        )
+        return ToolResult(status="resolution_error", error=str(exc), audit_id=audit_id)
 
     suffix = path_after_base if path_after_base.startswith("/") else f"/{path_after_base}"
     odata_url = f"{resolved.base_url}{suffix}"

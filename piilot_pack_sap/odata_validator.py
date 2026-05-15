@@ -64,9 +64,7 @@ LOGICAL_OPS: frozenset[str] = frozenset({"and", "or"})
 UNARY_OPS: frozenset[str] = frozenset({"not"})
 LITERAL_KEYWORDS: frozenset[str] = frozenset({"null", "true", "false"})
 
-AGGREGATE_OPS: frozenset[str] = frozenset(
-    {"sum", "avg", "min", "max", "count", "countdistinct"}
-)
+AGGREGATE_OPS: frozenset[str] = frozenset({"sum", "avg", "min", "max", "count", "countdistinct"})
 
 DEFAULT_MAX_TOP = 1000
 
@@ -142,9 +140,7 @@ def validate_request(
     if "$apply" in query_params:
         _validate_apply(query_params["$apply"], allowed=allowed_set)
     if "$filter" in query_params:
-        _validate_filter(
-            query_params["$filter"], version=version, allowed=allowed_set
-        )
+        _validate_filter(query_params["$filter"], version=version, allowed=allowed_set)
 
 
 def _validate_top(raw: str, *, max_top: int) -> None:
@@ -253,10 +249,7 @@ def _validate_apply(raw: str, *, allowed: frozenset[str] | None) -> None:
     if match is None:
         raise ValidationError(
             code="invalid_apply",
-            message=(
-                "$apply only supports a single aggregate(...) call in v1; "
-                f"got {raw!r}"
-            ),
+            message=("$apply only supports a single aggregate(...) call in v1; " f"got {raw!r}"),
         )
     body = match.group(1)
     items = _split_top_level_commas(body)
@@ -270,10 +263,7 @@ def _validate_apply(raw: str, *, allowed: frozenset[str] | None) -> None:
         if m is None:
             raise ValidationError(
                 code="invalid_apply_item",
-                message=(
-                    f"$apply aggregation {item!r} must be "
-                    "'<prop> with <op> as <alias>'"
-                ),
+                message=(f"$apply aggregation {item!r} must be " "'<prop> with <op> as <alias>'"),
             )
         prop = m.group("prop") or ""
         op = (m.group("op") or "").lower()
@@ -281,8 +271,7 @@ def _validate_apply(raw: str, *, allowed: frozenset[str] | None) -> None:
             raise ValidationError(
                 code="invalid_aggregate_op",
                 message=(
-                    f"aggregate op {op!r} not allowed; "
-                    f"choose from {sorted(AGGREGATE_OPS)}"
+                    f"aggregate op {op!r} not allowed; " f"choose from {sorted(AGGREGATE_OPS)}"
                 ),
             )
         # For non-count ops we need a property; for count/countdistinct it may
@@ -438,10 +427,7 @@ class _FilterParser:
             if value_lower in LOGICAL_OPS or value_lower in UNARY_OPS:
                 raise ValidationError(
                     code="misplaced_operator",
-                    message=(
-                        f"operator {tok.value!r} cannot appear here "
-                        f"(position {tok.pos})"
-                    ),
+                    message=(f"operator {tok.value!r} cannot appear here " f"(position {tok.pos})"),
                 )
             if value_lower in COMPARISON_OPS:
                 raise ValidationError(

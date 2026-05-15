@@ -278,9 +278,7 @@ def upsert_schema_snapshot(
                 last_synced_at = now()
             """,
             rows,
-            template=(
-                "(%s, %s, %s, %s, %s, %s, %s, now())"
-            ),
+            template=("(%s, %s, %s, %s, %s, %s, %s, now())"),
         )
         return cur.rowcount
 

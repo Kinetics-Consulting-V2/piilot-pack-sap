@@ -239,9 +239,7 @@ def test_apply_non_aggregate_rejected() -> None:
 def test_apply_aggregate_groupby_rejected() -> None:
     # groupby is OData spec but explicitly out of v1 whitelist.
     with pytest.raises(ValidationError) as exc:
-        validate_request(
-            "GET", {"$apply": "groupby((Cat), aggregate(Amount with sum as T))"}
-        )
+        validate_request("GET", {"$apply": "groupby((Cat), aggregate(Amount with sum as T))"})
     assert exc.value.code == "invalid_apply"
 
 
@@ -288,11 +286,7 @@ def test_filter_v2_datetime_literal_valid() -> None:
 def test_filter_v2_datetimeoffset_literal_valid() -> None:
     validate_request(
         "GET",
-        {
-            "$filter": (
-                "CreatedAt ge datetimeoffset'2026-01-01T00:00:00Z'"
-            )
-        },
+        {"$filter": ("CreatedAt ge datetimeoffset'2026-01-01T00:00:00Z'")},
         version="v2",
     )
 
@@ -356,8 +350,7 @@ def test_filter_forbidden(expr: str, reason: str) -> None:
     with pytest.raises(ValidationError) as exc:
         validate_request("GET", {"$filter": expr})
     assert exc.value.code == reason, (
-        f"expected code {reason!r} for {expr!r}, got {exc.value.code!r} "
-        f"({exc.value.message})"
+        f"expected code {reason!r} for {expr!r}, got {exc.value.code!r} " f"({exc.value.message})"
     )
 
 
@@ -436,16 +429,12 @@ def test_filter_fuzz_payloads_dont_crash_and_either_pass_or_raise_validation(
 
 def test_fuzz_payload_with_sql_semicolon_is_rejected() -> None:
     with pytest.raises(ValidationError):
-        validate_request(
-            "GET", {"$filter": "Name eq 'X'; SELECT * FROM users"}
-        )
+        validate_request("GET", {"$filter": "Name eq 'X'; SELECT * FROM users"})
 
 
 def test_fuzz_payload_with_comment_is_rejected() -> None:
     with pytest.raises(ValidationError):
-        validate_request(
-            "GET", {"$filter": "Name eq 'X'/**/and/**/Age gt 0"}
-        )
+        validate_request("GET", {"$filter": "Name eq 'X'/**/and/**/Age gt 0"})
 
 
 def test_fuzz_payload_with_null_byte_is_rejected() -> None:
