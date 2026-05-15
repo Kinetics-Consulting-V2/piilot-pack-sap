@@ -14,6 +14,38 @@ plugin follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-15 — Migration hot-fix
+
+### Fixed
+
+- **`migrations/001_init_sap.sql`** — the two ``BEFORE UPDATE``
+  triggers on ``integrations_sap.connections`` and
+  ``integrations_sap.schema_snapshot`` referenced
+  ``public.set_updated_at()``, which does not exist in the Piilot
+  core schema. The actual function name is
+  ``public.update_updated_at_column()`` (defined in core migration
+  ``001_init.sql``). Replaced both call sites.
+
+### Impact
+
+Without this fix the plugin's first boot fails the migration runner
+with ``UndefinedFunction: function public.set_updated_at() does not
+exist`` → the loader marks it FAIL-SOFT → the plugin never reaches
+``plugins_registry``, the agent tools are not registered, and the
+HTTP routes return 404 for every company.
+
+The migration is wrapped in a ``BEGIN/COMMIT`` block, so the partial
+DDL was rolled back: no orphan schemas, tables or RLS policies were
+created in 0.1.0 deployments. Upgrading to 0.1.1 lets the runner
+re-apply ``001_init_sap.sql`` from scratch on the next boot.
+
+### Compat
+
+- Same SDK pin (``piilot-sdk>=0.7.0,<1.0.0``), same Python (3.12+).
+- Frontend ``piilot-pack-sap-ui`` stays at ``0.1.0`` — no UI change.
+
+## [Unreleased]
+
 ### Added — Phase 4 (hardening + mount tests + onboarding doc)
 
 - **`piilot_pack_sap/rate_limit.py`** — in-memory sliding-window

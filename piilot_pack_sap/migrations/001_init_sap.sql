@@ -240,12 +240,12 @@ DROP TRIGGER IF EXISTS trg_sap_connections_set_updated_at
     ON integrations_sap.connections;
 CREATE TRIGGER trg_sap_connections_set_updated_at
     BEFORE UPDATE ON integrations_sap.connections
-    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 DROP TRIGGER IF EXISTS trg_sap_schema_snap_set_updated_at
     ON integrations_sap.schema_snapshot;
 CREATE TRIGGER trg_sap_schema_snap_set_updated_at
     BEFORE UPDATE ON integrations_sap.schema_snapshot
-    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 COMMIT;
