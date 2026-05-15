@@ -72,12 +72,17 @@ DEFAULT_MAX_TOP = 1000
 IDENT_RE = re.compile(r"\A[A-Za-z_][A-Za-z0-9_]*\Z")
 
 
-@dataclass(frozen=True)
 class ValidationError(Exception):
-    """Raised when an OData request fails the whitelist."""
+    """Raised when an OData request fails the whitelist.
 
-    code: str
-    message: str
+    Plain ``Exception`` subclass (not a frozen dataclass) so the runtime can
+    attach ``__traceback__`` / ``__cause__`` during propagation.
+    """
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
     def __str__(self) -> str:  # pragma: no cover - trivial
         return f"[{self.code}] {self.message}"

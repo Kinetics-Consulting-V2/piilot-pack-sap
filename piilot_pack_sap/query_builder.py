@@ -105,8 +105,11 @@ class ODataQuery:
                 )
             if self.filter is not None:
                 params["$filter"] = self.filter
-            if self.format is not None:
-                params["$format"] = self.format
+            # NB: $format=json is intentionally NOT emitted on v2 /$count —
+            # SAP gateways return HTTP 400 because the endpoint serves
+            # text/plain (a raw integer), not JSON. The client overrides the
+            # Accept header to text/plain when needed; the caller asks the
+            # ODataClient for the count and gets {"count": <int>} regardless.
             validate_request(
                 "GET",
                 params,
